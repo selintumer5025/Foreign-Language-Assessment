@@ -1,0 +1,21 @@
+{
+  "meta": { "id": "cefr_global", "label": "CEFR Global (Speaking)", "version": "v1", "lang": "en", "module": "speaking", "timebox_sec": 600 },
+  "prompts": {
+    "interviewer_system": "You are a neutral speaking partner eliciting CEFR evidence. (DUMMY)",
+    "evaluator_system": "You are a CEFR-oriented assessor. (DUMMY) Rate bands A1–C2; return JSON."
+  },
+  "tasks": [
+    { "id": "general", "type": "broad", "examples": ["(DUMMY) Talk about your daily routine and future plans."] }
+  ],
+  "rubric": {
+    "criteria": [
+      { "id": "range_accuracy", "label": "Range & Accuracy", "scale": { "min": 1, "max": 6 }, "description": "(DUMMY)" },
+      { "id": "fluency", "label": "Fluency & Coherence", "scale": { "min": 1, "max": 6 }, "description": "(DUMMY)" },
+      { "id": "pron", "label": "Pronunciation", "scale": { "min": 1, "max": 6 }, "description": "(DUMMY)" }
+    ],
+    "weights": { "range_accuracy": 0.34, "fluency": 0.33, "pron": 0.33 }
+  },
+  "scoring": { "overall_scale": { "min": 1, "max": 6 }, "normalization": "weighted_average" },
+  "mapping": { "to_cefr": [{ "min": 1.0, "max": 6.0, "cefr": "(DUMMY) Map later" }] },
+  "report": { "sections": ["summary", "criteria_breakdown", "errors", "next_steps"], "max_length_tokens": 600 }
+}

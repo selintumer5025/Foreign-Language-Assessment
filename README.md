@@ -69,3 +69,13 @@ tests/          # Pytest tabanlı backend testleri
 - HTML raporu dosyaya kaydetme ve paylaşılabilir bağlantı üretme
 - Mock e-posta gönderimi (SMTP/SendGrid entegrasyonuna hazır arayüz)
 - React tabanlı sohbet arayüzü, oturum yönetimi ve değerlendirme sunumu
+
+## Standart Bazlı Değerlendirme Taslağı
+- Amaç: UI üzerinden değerlendirme standardı seçildiğinde ilgili JSON yüklenir; sohbet interviewer rolüyle ilerler, oturum bitince evaluator JSON'daki rubriğe göre puanlama yapar, CEFR eşlemesi ve HTML rapor hazırlanır, e-posta iletilir.
+- Mevcut aşama: Kod yok; yalnızca tasarım dokümantasyonu ve dummy JSON konfigürasyonları bulunur.
+- Gelecek faz: Frontend dropdown seçimleri backend'e ileterek ilgili JSON'u yükleyecek ve LLM'e aktaracak.
+
+## Notlar
+- JSON dosyaları placeholder içeriğe sahiptir; gerçek rubrik ve haritalama değerleri daha sonra doldurulacaktır.
+- Uygulama kodu geliştirilirken sabit metin kullanılmayacak; tüm rol mesajları, kriterler, ağırlıklar ve CEFR eşlemesi JSON üzerinden okunacaktır.
+- Yeni standart eklemek yalnızca `configs/<standard>/<version>.json` dosyası eklemeyi gerektirir.
