@@ -170,10 +170,17 @@ export function ChatPanel() {
                 </button>
                 <button
                   onClick={handleReport}
-                  disabled={!evaluation || isLoading}
+                  disabled={!evaluation || !sessionSummary || isLoading}
+                  title={
+                    !evaluation
+                      ? "Run an evaluation to unlock the detailed report."
+                      : !sessionSummary
+                        ? "End the session to compile the summary before generating the report."
+                        : undefined
+                  }
                   className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
                 >
-                  <div className={`absolute inset-0 ${!evaluation || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-orange-600 to-red-600'} transition-transform duration-300 group-hover:scale-110`}></div>
+                  <div className={`absolute inset-0 ${!evaluation || !sessionSummary || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-orange-600 to-red-600'} transition-transform duration-300 group-hover:scale-110`}></div>
                   <span className="relative">Generate Report</span>
                 </button>
               </div>

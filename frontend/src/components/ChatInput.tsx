@@ -15,6 +15,9 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
   const sendRef = useRef(onSend);
   const disabledRef = useRef(Boolean(disabled));
   const captureBufferRef = useRef("");
+  const manualStopRef = useRef(false);
+  const shouldResetOnStartRef = useRef(false);
+  const restartTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     sendRef.current = onSend;
@@ -36,19 +39,42 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
     recognition.lang = "en-US";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    recognition.continuous = true;
 
     recognition.onstart = () => {
-      captureBufferRef.current = "";
+      if (shouldResetOnStartRef.current) {
+        captureBufferRef.current = "";
+        shouldResetOnStartRef.current = false;
+      }
       setIsRecording(true);
     };
     recognition.onend = () => {
       setIsRecording(false);
-      const finalMessage = captureBufferRef.current.trim();
-      if (finalMessage && !disabledRef.current) {
-        sendRef.current(finalMessage);
-        setLastCaptured(finalMessage);
+      if (restartTimeoutRef.current) {
+        window.clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = null;
       }
-      captureBufferRef.current = "";
+
+      const finalMessage = captureBufferRef.current.trim();
+      if (manualStopRef.current) {
+        manualStopRef.current = false;
+        if (finalMessage && !disabledRef.current) {
+          sendRef.current(finalMessage);
+          setLastCaptured(finalMessage);
+        }
+        captureBufferRef.current = "";
+        return;
+      }
+
+      if (!disabledRef.current && recognitionRef.current) {
+        restartTimeoutRef.current = window.setTimeout(() => {
+          try {
+            recognitionRef.current.start();
+          } catch {
+            // Ignore restart failures
+          }
+        }, 250);
+      }
     };
     recognition.onerror = () => {
       setIsRecording(false);
@@ -67,6 +93,11 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
     setSpeechSupported(true);
 
     return () => {
+      manualStopRef.current = true;
+      if (restartTimeoutRef.current) {
+        window.clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = null;
+      }
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -82,10 +113,13 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
     if (!recognitionRef.current || disabled) return;
     try {
       if (isRecording) {
+        manualStopRef.current = true;
         recognitionRef.current.stop();
       } else {
         setLastCaptured(null);
         captureBufferRef.current = "";
+        manualStopRef.current = false;
+        shouldResetOnStartRef.current = true;
         recognitionRef.current.start();
       }
     } catch {
