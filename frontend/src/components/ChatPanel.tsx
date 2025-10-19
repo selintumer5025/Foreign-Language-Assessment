@@ -403,11 +403,11 @@ export function ChatPanel() {
       {participantModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-3xl border border-cyan-500/40 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
-            <h2 className="text-2xl font-bold">Değerlendireni Tanıyalım</h2>
-            <p className="mt-2 text-sm text-slate-300">Lütfen rapora eklenecek ad-soyad ve e-posta bilgilerinizi girin.</p>
+            <h2 className="text-2xl font-bold">Please enter your information</h2>
+            <p className="mt-2 text-sm text-slate-300">Please enter your information.</p>
             <div className="mt-6 grid gap-4">
               <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-300" htmlFor="participant_full_name">Ad Soyad</label>
+                <label className="text-sm font-semibold text-slate-300" htmlFor="participant_full_name">Full Name</label>
                 <input
                   id="participant_full_name"
                   name="fullName"
@@ -415,11 +415,11 @@ export function ChatPanel() {
                   value={participantForm.fullName}
                   onChange={handleParticipantInputChange}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                  placeholder="Örnek Kullanıcı"
+                  placeholder="John Doe"
                 />
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-300" htmlFor="participant_email">E-posta Adresi</label>
+                <label className="text-sm font-semibold text-slate-300" htmlFor="participant_email">Email Address</label>
                 <input
                   id="participant_email"
                   name="email"
@@ -427,7 +427,7 @@ export function ChatPanel() {
                   value={participantForm.email}
                   onChange={handleParticipantInputChange}
                   className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                  placeholder="ornek@domain.com"
+                  placeholder="example@domain.com"
                 />
               </div>
             </div>
@@ -439,7 +439,7 @@ export function ChatPanel() {
                 className="relative overflow-hidden rounded-xl px-6 py-3 font-semibold text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 transition-transform duration-300"></span>
-                <span className="relative">Kaydet ve Devam Et</span>
+                <span className="relative">Save and Continue</span>
               </button>
             </div>
           </div>
@@ -636,16 +636,16 @@ export function ChatPanel() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 px-5 py-4 text-sm text-cyan-50 shadow-lg">
             <div>
-              <p className="text-xs uppercase tracking-wide text-cyan-200/80">Değerlendiren</p>
-              <p className="text-lg font-semibold text-white">{participantInfo.fullName || "Bilgi bekleniyor"}</p>
-              <p className="text-xs text-cyan-200/70">{participantInfo.email || "E-posta henüz paylaşılmadı"}</p>
+              <p className="text-xs uppercase tracking-wide text-cyan-200/80">Assessed Participant</p>
+              <p className="text-lg font-semibold text-white">{participantInfo.fullName || "Awaiting information"}</p>
+              <p className="text-xs text-cyan-200/70">{participantInfo.email || "Email not provided yet"}</p>
             </div>
             <button
               type="button"
               onClick={() => setParticipantModalOpen(true)}
               className="rounded-xl border border-cyan-300/60 px-4 py-2 text-xs font-semibold text-cyan-50 transition-all duration-300 hover:border-white hover:text-white"
             >
-              Bilgileri Güncelle
+              Update Info
             </button>
           </div>
           {/* Header Section */}
