@@ -1,22 +1,183 @@
 {
-  "meta": { "id": "toefl", "label": "TOEFL iBT Speaking", "version": "v1", "lang": "en", "module": "speaking", "timebox_sec": 600 },
+  "meta": {
+    "id": "toefl",
+    "label": "TOEFL iBT Speaking",
+    "version": "v1",
+    "lang": "en",
+    "module": "speaking",
+    "timebox_sec": 600
+  },
   "prompts": {
-    "interviewer_system": "You are a TOEFL-style speaking interviewer. (DUMMY) Keep turns short; one follow-up each turn.",
-    "evaluator_system": "You are a TOEFL Speaking rater. (DUMMY) Score four criteria 0–4 using the rubric; return JSON."
+    "interviewer_system": "You are a TOEFL-style speaking interviewer for a mock interview. Keep turns concise (1–2 sentences), elicit clear, structured responses, and always ask exactly one short follow-up. Encourage reasons and brief examples. Avoid correcting during the interview.",
+    "evaluator_system": "You are an experienced TOEFL Speaking rater. Evaluate ONLY the final transcript using the rubric below. Score four criteria on 0–4 with decimals allowed (e.g., 2.5). Provide 1–2 sentence justifications per criterion. Then compute the weighted overall score and map it to an approximate CEFR band using `mapping.to_cefr`. List the top 3–5 recurring language issues with one-line corrections, and propose 5 targeted practice recommendations. Return a single JSON object strictly following `evaluator_output_schema`."
   },
   "tasks": [
-    { "id": "warmup", "type": "open", "examples": ["(DUMMY) Introduce yourself briefly."] }
+    {
+      "id": "warmup",
+      "type": "open",
+      "instructions": "Brief opener to lower anxiety and check microphone level.",
+      "examples": [
+        "Please introduce yourself in 20–30 seconds.",
+        "What are your study or career goals this year?"
+      ]
+    },
+    {
+      "id": "independent_prompt",
+      "type": "opinion",
+      "instructions": "Independent speaking style: personal preference or opinion.",
+      "examples": [
+        "Do you prefer studying alone or with others? Give reasons and an example.",
+        "Describe a challenge you faced and how you handled it."
+      ]
+    },
+    {
+      "id": "explanation_prompt",
+      "type": "expository",
+      "instructions": "Explain a process, habit, or routine with 2–3 steps or reasons.",
+      "examples": [
+        "Explain a daily habit that improves your productivity.",
+        "Describe how you prepare for an important exam."
+      ]
+    }
   ],
   "rubric": {
     "criteria": [
-      { "id": "delivery", "label": "Delivery", "scale": { "min": 0, "max": 4 }, "description": "(DUMMY) Fluency, pace, pronunciation." },
-      { "id": "language_use", "label": "Language Use", "scale": { "min": 0, "max": 4 }, "description": "(DUMMY) Grammar & vocabulary." },
-      { "id": "topic_dev", "label": "Topic Development", "scale": { "min": 0, "max": 4 }, "description": "(DUMMY) Coherence & support." },
-      { "id": "task", "label": "Task Fulfillment", "scale": { "min": 0, "max": 4 }, "description": "(DUMMY) Relevance & completeness." }
+      {
+        "id": "delivery",
+        "label": "Delivery",
+        "scale": { "min": 0, "max": 4 },
+        "description": "Overall fluency, pacing, pronunciation, and comprehensibility (minimal strain for the listener)."
+      },
+      {
+        "id": "language_use",
+        "label": "Language Use",
+        "scale": { "min": 0, "max": 4 },
+        "description": "Range and accuracy of grammar; variety and appropriacy of vocabulary; control over forms."
+      },
+      {
+        "id": "topic_dev",
+        "label": "Topic Development",
+        "scale": { "min": 0, "max": 4 },
+        "description": "Organization, cohesion, relevance, support with brief examples or reasons."
+      },
+      {
+        "id": "task",
+        "label": "Task Fulfillment",
+        "scale": { "min": 0, "max": 4 },
+        "description": "Addresses the prompt fully; stays on topic; answers are complete but concise."
+      }
     ],
-    "weights": { "delivery": 0.25, "language_use": 0.35, "topic_dev": 0.25, "task": 0.15 }
+    "weights": {
+      "delivery": 0.25,
+      "language_use": 0.35,
+      "topic_dev": 0.25,
+      "task": 0.15
+    },
+    "band_hints": {
+      "4": "Natural flow, minor slips; wide range; well-developed ideas; fully on task.",
+      "3": "Generally fluent; occasional errors; adequate range; mostly organized; minor omissions.",
+      "2": "Noticeable hesitation; limited range; frequent errors; uneven development.",
+      "1": "Frequent breakdowns; very limited range; largely incomplete or off-topic.",
+      "0": "Non-responsive or unintelligible."
+    }
   },
-  "scoring": { "overall_scale": { "min": 0, "max": 4 }, "normalization": "weighted_average" },
-  "mapping": { "to_cefr": [{ "min": 0.0, "max": 4.0, "cefr": "(DUMMY) Map later" }] },
-  "report": { "sections": ["summary", "criteria_breakdown", "errors", "recommendations"], "max_length_tokens": 600 }
+  "scoring": {
+    "overall_scale": { "min": 0, "max": 4 },
+    "normalization": "weighted_average",
+    "round_to": 2
+  },
+  "mapping": {
+    "to_cefr": [
+      { "min": 0.0, "max": 1.0, "cefr": "A1–A2" },
+      { "min": 1.1, "max": 2.0, "cefr": "B1" },
+      { "min": 2.1, "max": 3.0, "cefr": "B2" },
+      { "min": 3.1, "max": 3.5, "cefr": "C1" },
+      { "min": 3.6, "max": 4.0, "cefr": "C2" }
+    ]
+  },
+  "report": {
+    "sections": [
+      "summary",
+      "criteria_breakdown",
+      "common_errors",
+      "recommendations",
+      "quotes"
+    ],
+    "title": "English Speaking Assessment Report (TOEFL-style)",
+    "max_length_tokens": 800,
+    "summary_line_template": "Overall: ${overall}/4 (~${cefr}). Strength: ${top_strength}. Key focus: ${top_focus}."
+  },
+  "evaluator_output_schema": {
+    "type": "object",
+    "required": [
+      "criteria",
+      "overall",
+      "cefr",
+      "common_errors",
+      "recommendations",
+      "evidence_quotes"
+    ],
+    "properties": {
+      "criteria": {
+        "type": "object",
+        "required": ["delivery", "language_use", "topic_dev", "task"],
+        "properties": {
+          "delivery": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "comment": { "type": "string" }
+            }
+          },
+          "language_use": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "comment": { "type": "string" }
+            }
+          },
+          "topic_dev": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "comment": { "type": "string" }
+            }
+          },
+          "task": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "comment": { "type": "string" }
+            }
+          }
+        }
+      },
+      "overall": { "type": "number" },
+      "cefr": { "type": "string" },
+      "common_errors": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "issue": { "type": "string" },
+            "fix": { "type": "string" }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 5
+      },
+      "recommendations": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 5,
+        "maxItems": 7
+      },
+      "evidence_quotes": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 2,
+        "maxItems": 4
+      }
+    }
+  }
 }
