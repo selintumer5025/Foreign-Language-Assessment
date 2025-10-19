@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import type { InteractionMode } from "../types";
 
 interface ChatInputProps {
@@ -10,6 +10,7 @@ interface ChatInputProps {
 export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
+  const [message, setMessage] = useState("");
   const recognitionRef = useRef<any>(null);
   const sendRef = useRef(onSend);
   const disabledRef = useRef(Boolean(disabled));
@@ -44,9 +45,13 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
       if (!normalized) {
         return;
       }
-      if (!disabledRef.current) {
-        sendRef.current(normalized);
-      }
+
+      setMessage((previous) => {
+        if (!previous) {
+          return normalized;
+        }
+        return `${previous} ${normalized}`.trim();
+      });
     };
 
     recognitionRef.current = recognition;
@@ -83,8 +88,23 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
     }
   }, [mode]);
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (disabledRef.current) return;
+
+    const normalized = message.trim();
+    if (!normalized) return;
+
+    sendRef.current(normalized);
+    setMessage("");
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(event.target.value);
+  };
+
   return (
-    <div>
+    <div className="space-y-4">
       <div className="flex gap-2">
         <button
           type="button"
@@ -102,6 +122,29 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
           Voice capture is not supported in this browser. Please switch to a supported browser to continue.
         </p>
       )}
+      <form onSubmit={handleSubmit} className="space-y-2">
+        <label className="block text-sm font-semibold text-slate-700" htmlFor="chat-input-textarea">
+          Your response
+        </label>
+        <textarea
+          id="chat-input-textarea"
+          value={message}
+          onChange={handleChange}
+          disabled={disabled}
+          placeholder={speechSupported ? "Speak or type your answer here" : "Type your answer here"}
+          className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-900 shadow focus:outline-none focus:ring disabled:cursor-not-allowed disabled:bg-slate-100"
+          rows={4}
+        />
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={disabled || message.trim().length === 0}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-slate-400"
+          >
+            {mode === "voice" ? "Send" : "Next Question"}
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
