@@ -60,6 +60,9 @@ export function ChatPanel() {
   const [emailConfigDismissed, setEmailConfigDismissed] = useState(false);
   const [emailBannerMessage, setEmailBannerMessage] = useState<string | null>(null);
   const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error" | "warning"; message: string } | null>(null);
+  const [participantModalOpen, setParticipantModalOpen] = useState(true);
+  const [participantForm, setParticipantForm] = useState({ fullName: "", email: "" });
+  const [participantInfo, setParticipantInfo] = useState({ fullName: "", email: "" });
   const [autoResponseIndex, setAutoResponseIndex] = useState(0);
   const emailFeedbackClass = useMemo(() => {
     if (!emailFeedback) return "";
@@ -73,6 +76,20 @@ export function ChatPanel() {
         return "border-amber-400/40 bg-amber-500/10 text-amber-100";
     }
   }, [emailFeedback]);
+
+  const participantFormValid =
+    participantForm.fullName.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participantForm.email.trim());
+  const participantInfoReady =
+    participantInfo.fullName.trim().length > 0 && participantInfo.email.trim().length > 0;
+
+  useEffect(() => {
+    if (!participantModalOpen) return;
+    if (participantInfo.fullName.trim() || participantInfo.email.trim()) {
+      setParticipantForm({ fullName: participantInfo.fullName, email: participantInfo.email });
+    } else {
+      setParticipantForm({ fullName: "", email: "" });
+    }
+  }, [participantModalOpen, participantInfo.fullName, participantInfo.email]);
 
   const gptConfigured = gpt5StatusQuery.data?.configured ?? false;
   const requireApiKey = gpt5StatusQuery.isSuccess && !gptConfigured;
@@ -149,11 +166,42 @@ export function ChatPanel() {
     setEmailFeedback(null);
   };
 
+  const ensureParticipantInfo = () => {
+    if (participantInfoReady) {
+      return true;
+    }
+    setParticipantModalOpen(true);
+    return false;
+  };
+
+  const handleParticipantInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setParticipantForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleParticipantSubmit = () => {
+    if (!participantFormValid) return;
+    setParticipantInfo({
+      fullName: participantForm.fullName.trim(),
+      email: participantForm.email.trim(),
+    });
+    setParticipantModalOpen(false);
+  };
+
   const handleStart = async () => {
     if (blockingForConfig) return;
+    if (!ensureParticipantInfo()) return;
     resetSessionState();
     setAutoResponseIndex(0);
-    await startSession.mutateAsync({ mode: "voice", duration_minutes: 10 });
+    await startSession.mutateAsync({
+      mode: "voice",
+      duration_minutes: 10,
+      user_name: participantInfo.fullName.trim(),
+      user_email: participantInfo.email.trim(),
+    });
   };
 
   const handleSend = async (message: string) => {
@@ -175,12 +223,20 @@ export function ChatPanel() {
 
   const handleReport = async () => {
     if (!evaluation || !sessionSummary) return;
+    if (!ensureParticipantInfo()) return;
+
+    const participant = {
+      full_name: participantInfo.fullName.trim(),
+      email: participantInfo.email.trim(),
+    };
     const metadata = {
       session_id: evaluation.session.id,
       started_at: session?.started_at,
       duration_seconds: sessionSummary.duration_seconds,
       word_count: sessionSummary.word_count,
-      summary: sessionSummary.summary
+      summary: sessionSummary.summary,
+      participant,
+      report_generated_at: new Date().toISOString(),
     };
     const report = await generateReport.mutateAsync({ evaluation, session_metadata: metadata });
     setReportUrl(report.report_url);
@@ -196,7 +252,8 @@ export function ChatPanel() {
       const body = [
         "Merhaba,",
         "",
-        "Yeni oluşturulan dil değerlendirme raporuna aşağıdaki bağlantıdan ulaşabilirsiniz:",
+        `Yeni oluşturulan dil değerlendirme raporu ${participant.full_name} (${participant.email}) tarafından oluşturulan değerlendirmeye aittir.`,
+        "Detaylı rapora aşağıdaki bağlantıdan ulaşabilirsiniz:",
         report.report_url,
         "",
         "Bu mesaj sistem tarafından otomatik gönderilmiştir.",
@@ -307,6 +364,8 @@ export function ChatPanel() {
   const handleAutoResponse = async () => {
     if (blockingForConfig || chatMutation.isPending || startSession.isPending) return;
 
+    if (!ensureParticipantInfo()) return;
+
     let activeSession = session;
     const needsNewSession = !activeSession?.session_id || evaluation || sessionSummary;
 
@@ -314,7 +373,12 @@ export function ChatPanel() {
       resetSessionState();
       setAutoResponseIndex(0);
       try {
-        const result = await startSession.mutateAsync({ mode: "voice", duration_minutes: 10 });
+        const result = await startSession.mutateAsync({
+          mode: "voice",
+          duration_minutes: 10,
+          user_name: participantInfo.fullName.trim(),
+          user_email: participantInfo.email.trim(),
+        });
         activeSession = result;
       } catch (error) {
         console.error("Failed to start session for auto response", error);
@@ -336,6 +400,51 @@ export function ChatPanel() {
 
   return (
     <div className="relative min-h-screen">
+      {participantModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-cyan-500/40 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
+            <h2 className="text-2xl font-bold">Değerlendireni Tanıyalım</h2>
+            <p className="mt-2 text-sm text-slate-300">Lütfen rapora eklenecek ad-soyad ve e-posta bilgilerinizi girin.</p>
+            <div className="mt-6 grid gap-4">
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-300" htmlFor="participant_full_name">Ad Soyad</label>
+                <input
+                  id="participant_full_name"
+                  name="fullName"
+                  type="text"
+                  value={participantForm.fullName}
+                  onChange={handleParticipantInputChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                  placeholder="Örnek Kullanıcı"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-300" htmlFor="participant_email">E-posta Adresi</label>
+                <input
+                  id="participant_email"
+                  name="email"
+                  type="email"
+                  value={participantForm.email}
+                  onChange={handleParticipantInputChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                  placeholder="ornek@domain.com"
+                />
+              </div>
+            </div>
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={handleParticipantSubmit}
+                disabled={!participantFormValid}
+                className="relative overflow-hidden rounded-xl px-6 py-3 font-semibold text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 transition-transform duration-300"></span>
+                <span className="relative">Kaydet ve Devam Et</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {gpt5StatusQuery.isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
           <div className="rounded-2xl border border-violet-500/30 bg-slate-900/90 px-8 py-6 text-center text-slate-200 shadow-2xl">
@@ -525,6 +634,20 @@ export function ChatPanel() {
         )}
         {/* Main Chat Area */}
         <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 px-5 py-4 text-sm text-cyan-50 shadow-lg">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-cyan-200/80">Değerlendiren</p>
+              <p className="text-lg font-semibold text-white">{participantInfo.fullName || "Bilgi bekleniyor"}</p>
+              <p className="text-xs text-cyan-200/70">{participantInfo.email || "E-posta henüz paylaşılmadı"}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setParticipantModalOpen(true)}
+              className="rounded-xl border border-cyan-300/60 px-4 py-2 text-xs font-semibold text-cyan-50 transition-all duration-300 hover:border-white hover:text-white"
+            >
+              Bilgileri Güncelle
+            </button>
+          </div>
           {/* Header Section */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-3 mb-4">

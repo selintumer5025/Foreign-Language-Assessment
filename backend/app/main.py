@@ -56,7 +56,12 @@ def health_check() -> dict:
 @app.post("/api/session/start", response_model=SessionStartResponse, tags=["session"])
 def start_session(payload: SessionStartRequest, _: str = Depends(get_current_token)) -> SessionStartResponse:
     store = get_store()
-    session = store.create_session(mode=payload.mode, duration_minutes=payload.duration_minutes, user_name=payload.user_name)
+    session = store.create_session(
+        mode=payload.mode,
+        duration_minutes=payload.duration_minutes,
+        user_name=payload.user_name,
+        user_email=payload.user_email,
+    )
     greeting = next_prompt([])
     session.add_message(ChatMessage(role="assistant", content=greeting))
     return SessionStartResponse(

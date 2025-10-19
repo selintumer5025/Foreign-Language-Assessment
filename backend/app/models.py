@@ -24,6 +24,7 @@ class SessionStartRequest(BaseModel):
     mode: InteractionMode = InteractionMode.TEXT
     duration_minutes: int = Field(default=10, ge=1, le=60)
     user_name: Optional[str] = Field(default=None, description="Optional user display name")
+    user_email: Optional[EmailStr] = Field(default=None, description="Optional user email address")
 
 
 class SessionStartResponse(BaseModel):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from html import escape
 from pathlib import Path
 from typing import Optional
 
@@ -9,6 +10,18 @@ from ..models import DualEvaluationResponse, StandardEvaluation
 
 REPORTS_DIR = Path("backend/generated_reports")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _parse_iso_datetime(raw: str) -> datetime | None:
+    value = raw.strip()
+    if not value:
+        return None
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def _format_criteria_rows(standard: StandardEvaluation) -> str:
@@ -77,6 +90,53 @@ def _render_standard_section(standard: StandardEvaluation) -> str:
     """
 
 
+def _format_participant_sentence(evaluation: DualEvaluationResponse, session_metadata: Optional[dict]) -> str:
+    participant_data: dict[str, str] = {}
+    if session_metadata and isinstance(session_metadata, dict):
+        raw_participant = session_metadata.get("participant")
+        if isinstance(raw_participant, dict):
+            participant_data = raw_participant  # type: ignore[assignment]
+
+    full_name = str(participant_data.get("full_name") or "").strip()
+    email = str(participant_data.get("email") or "").strip()
+
+    report_timestamp = None
+    timestamp_source = "evaluation"
+    if session_metadata and isinstance(session_metadata, dict):
+        raw_timestamp = session_metadata.get("report_generated_at")
+        if isinstance(raw_timestamp, str):
+            parsed_timestamp = _parse_iso_datetime(raw_timestamp)
+            if parsed_timestamp:
+                report_timestamp = parsed_timestamp
+                timestamp_source = "metadata"
+
+    if report_timestamp is None:
+        report_timestamp = evaluation.generated_at
+        timestamp_source = "evaluation"
+
+    formatted_timestamp = report_timestamp.strftime("%d.%m.%Y %H:%M")
+    timezone_suffix = ""
+    if report_timestamp.tzinfo:
+        tz_name = report_timestamp.tzinfo.tzname(report_timestamp)
+        timezone_suffix = f" ({tz_name or report_timestamp.tzinfo})"
+    elif timestamp_source == "evaluation":
+        timezone_suffix = " (UTC)"
+
+    identity_parts: list[str] = []
+    if full_name:
+        identity_parts.append(escape(full_name))
+    if email:
+        identity_parts.append(f"({escape(email)})" if full_name else escape(email))
+
+    identity = " ".join(identity_parts).strip()
+
+    if identity:
+        return f"Bu rapor {formatted_timestamp}{timezone_suffix} tarihinde {identity} tarafından gerçekleştirilen değerlendirmeye aittir."
+    return f"Bu rapor {formatted_timestamp}{timezone_suffix} tarihinde oluşturuldu."
+
+
+
+
 def build_html_report(evaluation: DualEvaluationResponse, session_metadata: Optional[dict] = None) -> str:
     settings = get_settings()
     warnings_html = "".join(f"<div class=\"alert alert-warning\">{w}</div>" for w in (evaluation.warnings or []))
@@ -102,7 +162,31 @@ def build_html_report(evaluation: DualEvaluationResponse, session_metadata: Opti
         )
     )
 
-    html = f"""
+    participant_sentence = _format_participant_sentence(evaluation, session_metadata)
+    participant_summary_html = f"<p class=\"metadata\">{participant_sentence}</p>"
+    session_summary_html = ""
+    if session_metadata and isinstance(session_metadata, dict):
+        raw_summary = session_metadata.get("summary")
+        if isinstance(raw_summary, str) and raw_summary.strip():
+            session_summary_html = f"<p class=\"metadata\"><strong>Session Summary:</strong> {escape(raw_summary.strip())}</p>"
+
+    report_timestamp = evaluation.generated_at
+    timestamp_suffix = " (UTC)"
+    if session_metadata and isinstance(session_metadata, dict):
+        raw_report_timestamp = session_metadata.get("report_generated_at")
+        if isinstance(raw_report_timestamp, str):
+            parsed_report_timestamp = _parse_iso_datetime(raw_report_timestamp)
+            if parsed_report_timestamp:
+                report_timestamp = parsed_report_timestamp
+                if parsed_report_timestamp.tzinfo:
+                    tz_name = parsed_report_timestamp.tzinfo.tzname(parsed_report_timestamp)
+                    timestamp_suffix = f" ({tz_name or parsed_report_timestamp.tzinfo})"
+                else:
+                    timestamp_suffix = ""
+
+    report_generated_display = f"{report_timestamp.strftime('%Y-%m-%d %H:%M:%S')}{timestamp_suffix}"
+
+    report_html = f"""
     <html lang=\"{settings.report_language}\">
     <head>
         <meta charset=\"utf-8\" />
@@ -131,6 +215,8 @@ def build_html_report(evaluation: DualEvaluationResponse, session_metadata: Opti
         <h1>English Speaking Assessment Report</h1>
         <div class=\"summary\">
             <p>{badges}</p>
+            {participant_summary_html}
+            {session_summary_html}
             <p><strong>Consensus CEFR:</strong> {evaluation.crosswalk.consensus_cefr}</p>
             <p><strong>Cross-standard note:</strong> {evaluation.crosswalk.notes}</p>
         </div>
@@ -147,17 +233,17 @@ def build_html_report(evaluation: DualEvaluationResponse, session_metadata: Opti
         <p><strong>Ended At:</strong> {evaluation.session.ended_at.isoformat()}</p>
         <p><strong>Duration:</strong> {evaluation.session.duration_sec} seconds</p>
         <p><strong>Turns:</strong> {evaluation.session.turns}</p>
-        <p><strong>Report Generated:</strong> {evaluation.generated_at.strftime('%Y-%m-%d %H:%M:%S')} (UTC)</p>
+        <p><strong>Report Generated:</strong> {report_generated_display}</p>
     </body>
     </html>
     """
-    return html
+    return report_html
 
 
 def persist_report(evaluation: DualEvaluationResponse, session_metadata: Optional[dict] = None) -> tuple[str, str]:
-    html = build_html_report(evaluation, session_metadata=session_metadata)
+    report_html = build_html_report(evaluation, session_metadata=session_metadata)
     filename = f"report_{evaluation.session.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.html"
     filepath = REPORTS_DIR / filename
-    filepath.write_text(html, encoding="utf-8")
+    filepath.write_text(report_html, encoding="utf-8")
     report_url = f"{get_settings().app_base_url}/reports/{filename}"
-    return html, report_url
+    return report_html, report_url
