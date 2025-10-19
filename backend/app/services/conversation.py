@@ -5,30 +5,30 @@ from typing import List
 from ..models import ChatMessage
 
 WARMUP_PROMPTS = [
-    "Hello! I'm your English interview coach. Could you briefly introduce yourself?",
-    "Great to meet you. What motivated you to practice your speaking skills today?",
+    "Hello! I'm your English interview coach. Please answer in English. Could you briefly introduce yourself?",
+    "Great to meet you. To stay in English mode, tell me what motivated you to practice your speaking skills today.",
 ]
 
 BEHAVIORAL_PROMPTS = [
-    "Tell me about a time when you had to solve a challenging problem at work.",
-    "Describe a situation where you collaborated with a team to achieve a goal.",
-    "Can you share an example of when you had to learn something quickly?",
+    "Tell me about a time when you had to solve a challenging problem at work. Keep your full answer in English, please.",
+    "Describe a situation where you collaborated with a team to achieve a goal, using clear English storytelling.",
+    "Can you share an example of when you had to learn something quickly? Explain it fully in English.",
 ]
 
 TECH_PROMPTS = [
-    "Imagine you must explain a complex concept from your field to a new colleague. How would you approach it?",
-    "What tools or technologies are essential in your day-to-day work?",
+    "Imagine you must explain a complex concept from your field to a new colleague. How would you approach it in English?",
+    "What tools or technologies are essential in your day-to-day work? Describe them in English.",
 ]
 
 FOLLOW_UPS = [
-    "What was the outcome and what did you learn?",
-    "How did your colleagues respond?",
-    "If you had another chance, what would you do differently?",
+    "What was the outcome and what did you learn? Answer in English with detail.",
+    "How did your colleagues respond? Share the story in English.",
+    "If you had another chance, what would you do differently? Explain in English.",
 ]
 
 CLOSING_PROMPTS = [
-    "Thanks for sharing those insights. Do you have any questions for me before we wrap up?",
-    "It was great speaking with you today. Ready for your feedback?",
+    "Thanks for sharing those insights. Do you have any questions for me before we wrap up? Feel free to ask in English.",
+    "It was great speaking with you today. Ready for your feedback in English?",
 ]
 
 

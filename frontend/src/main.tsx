@@ -13,7 +13,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10">
           <ChatPanel />
           <footer className="text-center text-xs text-slate-500">
-            English Interview Coach · Built for TOEFL-style speaking practice
+            English Interview Coach · Built for TOEFL-style speaking practice · Interface and prompts in English only
           </footer>
         </div>
       </div>
