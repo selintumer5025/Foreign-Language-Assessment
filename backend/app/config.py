@@ -1,6 +1,59 @@
 from functools import lru_cache
+from pathlib import Path
+
 from pydantic import BaseModel, Field, EmailStr
 import os
+
+
+ENV_FILE_PATH = Path(__file__).resolve().parents[2] / ".env"
+
+
+def _load_env_file() -> None:
+    if not ENV_FILE_PATH.exists():
+        return
+
+    for line in ENV_FILE_PATH.read_text().splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+def _persist_env_var(key: str, value: str) -> None:
+    lines: list[str]
+    if ENV_FILE_PATH.exists():
+        lines = ENV_FILE_PATH.read_text().splitlines()
+    else:
+        ENV_FILE_PATH.touch()
+        lines = []
+
+    updated = False
+    new_lines: list[str] = []
+    for line in lines:
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            new_lines.append(line)
+            continue
+
+        current_key, _, _ = line.partition("=")
+        if current_key.strip() == key and not updated:
+            new_lines.append(f"{key}={value}")
+            updated = True
+        else:
+            new_lines.append(line)
+
+    if not updated:
+        if new_lines and new_lines[-1].strip() != "":
+            new_lines.append("")
+        new_lines.append(f"{key}={value}")
+
+    ENV_FILE_PATH.write_text("\n".join(new_lines) + "\n")
+
+
+_load_env_file()
 
 
 class EmailSettings(BaseModel):
@@ -54,5 +107,6 @@ def get_settings() -> AppSettings:
 
 def set_gpt5_api_key(api_key: str) -> AppSettings:
     os.environ["GPT5_API_KEY"] = api_key
+    _persist_env_var("GPT5_API_KEY", api_key)
     get_settings.cache_clear()
     return get_settings()
