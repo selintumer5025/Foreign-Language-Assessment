@@ -211,19 +211,21 @@ export function ChatPanel() {
     }
   };
 
+  const evaluationInProgress = evaluateSession.isPending;
+
   const isLoading = useMemo(
     () =>
       startSession.isPending ||
       chatMutation.isPending ||
       finishSession.isPending ||
-      evaluateSession.isPending ||
+      evaluationInProgress ||
       generateReport.isPending ||
       configureGpt5.isPending,
     [
       startSession.isPending,
       chatMutation.isPending,
       finishSession.isPending,
-      evaluateSession.isPending,
+      evaluationInProgress,
       generateReport.isPending,
       configureGpt5.isPending,
     ]
@@ -524,7 +526,12 @@ export function ChatPanel() {
                   className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
                 >
                   <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-violet-600 to-fuchsia-600'} transition-transform duration-300 group-hover:scale-110`}></div>
-                  <span className="relative">Get Evaluation</span>
+                  <span className="relative flex items-center gap-2">
+                    {evaluationInProgress && (
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-transparent"></span>
+                    )}
+                    {evaluationInProgress ? "Evaluating…" : "Get Evaluation"}
+                  </span>
                 </button>
                 <button
                   onClick={handleReport}
@@ -542,6 +549,11 @@ export function ChatPanel() {
                   <span className="relative">Generate Report</span>
                 </button>
               </div>
+              {evaluationInProgress && (
+                <p className="w-full rounded-xl border border-violet-500/40 bg-violet-500/10 px-4 py-3 text-xs font-medium text-violet-100 shadow-lg">
+                  LLM evaluation in progress. We will surface your scores as soon as the analysis is complete.
+                </p>
+              )}
             </div>
           </div>
 
