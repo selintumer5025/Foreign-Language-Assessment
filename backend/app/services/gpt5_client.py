@@ -76,7 +76,13 @@ class GPT5Client:
 
         try:
             response = httpx.post(url, headers=headers, json=request_payload, timeout=self._timeout)
-        except httpx.HTTPError as exc:  # pragma: no cover - network failures
+        except httpx.TimeoutException as exc:  # pragma: no cover - network timeouts depend on external API
+            timeout_value = f"{self._timeout:g}" if isinstance(self._timeout, (int, float)) else str(self._timeout)
+            raise GPT5APIError(
+                "GPT-5 API request timed out after "
+                f"{timeout_value} seconds. Check your GPT-5 API base URL or network connectivity."
+            ) from exc
+        except httpx.HTTPError as exc:  # pragma: no cover - other network failures
             raise GPT5APIError(f"Failed to contact GPT-5 API: {exc}") from exc
 
         if response.status_code >= 400:
