@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: foreign-language-assessment
+    env: python
+    buildCommand: pip install -r backend/requirements.txt && npm install --prefix frontend
+    startCommand: bash start.sh
