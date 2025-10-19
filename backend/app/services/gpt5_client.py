@@ -32,14 +32,17 @@ class GPT5Client:
     ) -> dict:
         """Request an evaluation from GPT-5 and parse the JSON response."""
 
+        transcript_payload = [m.model_dump(mode="json") for m in transcript]
+        metadata_payload = metadata.model_dump(mode="json")
+
         messages_payload = [
             {"role": "system", "content": self._system_prompt()},
             {
                 "role": "user",
                 "content": json.dumps(
                     {
-                        "transcript": [m.model_dump() for m in transcript],
-                        "metadata": metadata.model_dump(),
+                        "transcript": transcript_payload,
+                        "metadata": metadata_payload,
                         "metrics": metrics,
                     },
                     ensure_ascii=False,
