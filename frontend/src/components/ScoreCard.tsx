@@ -14,12 +14,12 @@ export function ScoreCard({ evaluation }: ScoreCardProps) {
   return (
     <div className="rounded-xl bg-white p-6 shadow-xl space-y-4">
       <div>
-        <h2 className="text-2xl font-semibold text-slate-900">Assessment Summary</h2>
-        <p className="text-sm text-slate-600">Generated at {new Date(evaluation.generated_at).toLocaleString()}</p>
+        <h2 className="text-2xl font-semibold text-slate-900">English Assessment Summary</h2>
+        <p className="text-sm text-slate-600">Generated at {new Date(evaluation.generated_at).toLocaleString()} (local time)</p>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-lg bg-blue-50 p-4">
-          <p className="text-sm font-semibold text-blue-600 uppercase">Overall Score</p>
+          <p className="text-sm font-semibold text-blue-600 uppercase">Overall English Score</p>
           <p className="text-3xl font-bold text-blue-800">{evaluation.overall_score.toFixed(2)} / 4</p>
         </div>
         <div className="rounded-lg bg-blue-100 p-4">
@@ -29,7 +29,7 @@ export function ScoreCard({ evaluation }: ScoreCardProps) {
       </div>
       <p className="text-slate-700">{evaluation.summary}</p>
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">Detailed Scores</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Detailed English Scores</h3>
         <ul className="mt-2 space-y-2">
           {evaluation.dimensions.map((dimension) => (
             <li
@@ -48,7 +48,7 @@ export function ScoreCard({ evaluation }: ScoreCardProps) {
         </ul>
       </div>
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">Key Errors</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Key English Errors</h3>
         <ul className="mt-2 list-disc space-y-1 pl-6 text-sm text-slate-700">
           {evaluation.errors.map((item) => (
             <li key={item}>{item}</li>
@@ -56,7 +56,7 @@ export function ScoreCard({ evaluation }: ScoreCardProps) {
         </ul>
       </div>
       <div>
-        <h3 className="text-lg font-semibold text-slate-900">30-Day Action Plan</h3>
+        <h3 className="text-lg font-semibold text-slate-900">30-Day English Action Plan</h3>
         <ol className="mt-2 list-decimal space-y-1 pl-6 text-sm text-slate-700">
           {evaluation.action_plan.map((item) => (
             <li key={item}>{item}</li>

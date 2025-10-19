@@ -114,24 +114,24 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
             isRecording ? "bg-blue-800 hover:bg-blue-900" : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
-          {isRecording ? "Stop Recording" : "Start Recording"}
+          {isRecording ? "Stop English Capture" : "Start English Capture"}
         </button>
       </div>
       {!speechSupported && (
         <p className="mt-2 text-xs text-blue-600">
-          Voice capture is not supported in this browser. Please switch to a supported browser to continue.
+          Voice capture is not supported in this browser. Switch to a supported browser to keep practicing in English.
         </p>
       )}
       <form onSubmit={handleSubmit} className="space-y-2">
         <label className="block text-sm font-semibold text-slate-700" htmlFor="chat-input-textarea">
-          Your response
+          Your English response
         </label>
         <textarea
           id="chat-input-textarea"
           value={message}
           onChange={handleChange}
           disabled={disabled}
-          placeholder={speechSupported ? "Speak or type your answer here" : "Type your answer here"}
+          placeholder={speechSupported ? "Speak or type your answer in English" : "Type your answer in English"}
           className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-900 shadow focus-visible:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-blue-50"
           rows={4}
         />
@@ -141,7 +141,7 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
             disabled={disabled || message.trim().length === 0}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700"
           >
-            {mode === "voice" ? "Send" : "Next Question"}
+            {mode === "voice" ? "Send English Reply" : "Next English Question"}
           </button>
         </div>
       </form>

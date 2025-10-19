@@ -97,20 +97,25 @@ export function ChatPanel() {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2 space-y-4">
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-3xl font-semibold text-slate-900">English Interview Coach</h1>
+          <div>
+            <h1 className="text-3xl font-semibold text-slate-900">English Interview Coach</h1>
+            <p className="mt-1 text-sm text-slate-600">
+              The entire experience runs in English so you can focus on fluency, clarity, and interview confidence.
+            </p>
+          </div>
           <div className="flex items-center gap-3">
             <button
               onClick={handleStart}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
             >
-              {session ? "Restart Session" : "Start Session"}
+              {session ? "Restart English Session" : "Begin English Session"}
             </button>
           </div>
         </div>
         <div className="h-[480px] overflow-y-auto rounded-xl border border-slate-200 bg-blue-50 p-4 shadow-inner">
           {transcript.length === 0 ? (
             <p className="text-center text-sm text-slate-500">
-              Start a session to begin the conversation. Prompts will be read aloud, and you can answer by speaking.
+              Start a session to begin the English-only conversation. Prompts will be spoken in English and you can reply aloud or by typing.
             </p>
           ) : (
             <div className="space-y-3">
@@ -127,21 +132,21 @@ export function ChatPanel() {
             disabled={!session || isLoading}
             className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700"
           >
-            Finish Session
+            End Session
           </button>
           <button
             onClick={handleEvaluate}
             disabled={!session || isLoading}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700"
           >
-            Evaluate
+            Get Evaluation
           </button>
           <button
             onClick={handleReport}
             disabled={!evaluation || isLoading}
             className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700"
           >
-            Generate Report
+            Generate English Report
           </button>
         </div>
         {sessionSummary && (
