@@ -89,7 +89,7 @@ class EmailSettings(BaseModel):
 
 class AppSettings(BaseModel):
     target_email: EmailStr | None = Field(default=None, description="Default report recipient")
-    app_base_url: str = Field(default="http://localhost:5173", description="Base URL for report links")
+    app_base_url: str = Field(default="http://localhost:8000", description="Base URL for report links")
     store_transcripts: bool = Field(default=True, description="Whether to persist transcripts in memory")
     secret_token: str = Field(default="dev-secret", description="Simple bearer token for auth")
     report_language: str = Field(default="en", description="Report language code")
@@ -106,7 +106,7 @@ class AppSettings(BaseModel):
     def from_env() -> "AppSettings":
         return AppSettings(
             target_email=os.getenv("TARGET_EMAIL"),
-            app_base_url=os.getenv("APP_BASE_URL", "http://localhost:5173"),
+            app_base_url=os.getenv("APP_BASE_URL", "http://localhost:8000"),
             store_transcripts=os.getenv("STORE_TRANSCRIPTS", "true").lower() == "true",
             secret_token=os.getenv("APP_SECRET_TOKEN", "dev-secret"),
             report_language=os.getenv("REPORT_LANGUAGE", "en"),

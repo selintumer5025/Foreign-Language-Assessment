@@ -5,6 +5,7 @@ from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .auth import get_current_token
 from .config import get_settings, set_gpt5_api_key, set_email_settings
@@ -33,7 +34,7 @@ from .services.conversation import next_prompt
 from .services.evaluation import evaluate_transcript
 from .services.gpt5_client import clear_gpt5_client_cache
 from .services.emailer import send_email
-from .services.reporting import persist_report
+from .services.reporting import REPORTS_DIR, persist_report
 from .services.session_store import get_store
 
 app = FastAPI(title="Foreign Language Assessment API", version="0.1.0")
@@ -46,6 +47,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/reports", StaticFiles(directory=REPORTS_DIR, html=True), name="generated_reports")
 
 
 @app.get("/health", tags=["health"])
