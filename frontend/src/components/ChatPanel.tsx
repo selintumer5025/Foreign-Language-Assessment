@@ -103,9 +103,9 @@ export function ChatPanel() {
         <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-fuchsia-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1000ms' }}></div>
       </div>
 
-      <div className="relative grid grid-cols-1 gap-8 lg:grid-cols-3">
+      <div className="relative flex flex-col gap-12">
         {/* Main Chat Area */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           {/* Header Section */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-3 mb-4">
@@ -130,6 +130,54 @@ export function ChatPanel() {
                 {session ? "🔄 Restart English Session" : "▶️ Begin English Session"}
               </span>
             </button>
+          </div>
+
+          {/* Voice Capture & Actions */}
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative h-full rounded-2xl bg-white/5 p-4 backdrop-blur-xl border border-white/10 shadow-2xl">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-cyan-200">Voice Capture</h2>
+                <p className="mt-1 text-xs text-slate-300">
+                  Keep the microphone controls handy to capture your English responses without scrolling.
+                </p>
+                <div className="mt-4">
+                  <ChatInput onSend={handleSend} disabled={!canChat || isLoading} mode={activeMode} />
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl shadow-2xl">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-violet-200">Session Controls</h2>
+              <p className="text-xs text-slate-300">
+                Manage the flow of your English practice and unlock AI-powered feedback when you are ready.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={handleFinish}
+                  disabled={!session || isLoading}
+                  className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
+                >
+                  <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-blue-600 to-cyan-600'} transition-transform duration-300 group-hover:scale-110`}></div>
+                  <span className="relative">End Session</span>
+                </button>
+                <button
+                  onClick={handleEvaluate}
+                  disabled={!session || isLoading}
+                  className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
+                >
+                  <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-violet-600 to-fuchsia-600'} transition-transform duration-300 group-hover:scale-110`}></div>
+                  <span className="relative">Get Evaluation</span>
+                </button>
+                <button
+                  onClick={handleReport}
+                  disabled={!evaluation || isLoading}
+                  className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
+                >
+                  <div className={`absolute inset-0 ${!evaluation || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-orange-600 to-red-600'} transition-transform duration-300 group-hover:scale-110`}></div>
+                  <span className="relative">Generate Report</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Chat Messages Container */}
@@ -157,42 +205,6 @@ export function ChatPanel() {
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Chat Input */}
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative">
-              <ChatInput onSend={handleSend} disabled={!canChat || isLoading} mode={activeMode} />
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-4">
-            <button
-              onClick={handleFinish}
-              disabled={!session || isLoading}
-              className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
-            >
-              <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-blue-600 to-cyan-600'} transition-transform duration-300 group-hover:scale-110`}></div>
-              <span className="relative">End Session</span>
-            </button>
-            <button
-              onClick={handleEvaluate}
-              disabled={!session || isLoading}
-              className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
-            >
-              <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-violet-600 to-fuchsia-600'} transition-transform duration-300 group-hover:scale-110`}></div>
-              <span className="relative">Get Evaluation</span>
-            </button>
-            <button
-              onClick={handleReport}
-              disabled={!evaluation || isLoading}
-              className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
-            >
-              <div className={`absolute inset-0 ${!evaluation || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-orange-600 to-red-600'} transition-transform duration-300 group-hover:scale-110`}></div>
-              <span className="relative">Generate Report</span>
-            </button>
           </div>
 
           {/* Session Summary */}
@@ -231,10 +243,15 @@ export function ChatPanel() {
           )}
         </div>
 
-        {/* Sidebar - Evaluation Card */}
+        {/* Evaluation & Report Section */}
         <div className="space-y-6">
           {evaluation ? (
-            <ScoreCard evaluation={evaluation} />
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/30 rounded-3xl blur-2xl opacity-40"></div>
+              <div className="relative">
+                <ScoreCard evaluation={evaluation} />
+              </div>
+            </div>
           ) : (
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
