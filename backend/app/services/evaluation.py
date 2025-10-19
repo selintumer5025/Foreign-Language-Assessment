@@ -18,7 +18,7 @@ from ..models import (
     TranscriptMetadata,
 )
 
-CONFIG_ROOT = Path("configs")
+CONFIG_ROOT = Path(__file__).resolve().parents[3] / "configs"
 SUPPORTED_STANDARDS: Sequence[str] = ("toefl", "ielts")
 DEFAULT_VERSION = "v1"
 

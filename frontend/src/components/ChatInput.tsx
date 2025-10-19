@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { InteractionMode } from "../types";
 
 interface ChatInputProps {
@@ -10,10 +10,11 @@ interface ChatInputProps {
 export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
-  const [message, setMessage] = useState("");
+  const [lastCaptured, setLastCaptured] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
   const sendRef = useRef(onSend);
   const disabledRef = useRef(Boolean(disabled));
+  const captureBufferRef = useRef("");
 
   useEffect(() => {
     sendRef.current = onSend;
@@ -36,9 +37,22 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => setIsRecording(true);
-    recognition.onend = () => setIsRecording(false);
-    recognition.onerror = () => setIsRecording(false);
+    recognition.onstart = () => {
+      captureBufferRef.current = "";
+      setIsRecording(true);
+    };
+    recognition.onend = () => {
+      setIsRecording(false);
+      const finalMessage = captureBufferRef.current.trim();
+      if (finalMessage && !disabledRef.current) {
+        sendRef.current(finalMessage);
+        setLastCaptured(finalMessage);
+      }
+      captureBufferRef.current = "";
+    };
+    recognition.onerror = () => {
+      setIsRecording(false);
+    };
     recognition.onresult = (event: any) => {
       const transcript = event?.results?.[0]?.[0]?.transcript ?? "";
       const normalized = transcript.trim();
@@ -46,12 +60,7 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
         return;
       }
 
-      setMessage((previous) => {
-        if (!previous) {
-          return normalized;
-        }
-        return `${previous} ${normalized}`.trim();
-      });
+      captureBufferRef.current = `${captureBufferRef.current} ${normalized}`.trim();
     };
 
     recognitionRef.current = recognition;
@@ -75,6 +84,8 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
       if (isRecording) {
         recognitionRef.current.stop();
       } else {
+        setLastCaptured(null);
+        captureBufferRef.current = "";
         recognitionRef.current.start();
       }
     } catch {
@@ -87,21 +98,6 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
       console.warn("ChatInput now only supports voice mode.");
     }
   }, [mode]);
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (disabledRef.current) return;
-
-    const normalized = message.trim();
-    if (!normalized) return;
-
-    sendRef.current(normalized);
-    setMessage("");
-  };
-
-  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(event.target.value);
-  };
 
   return (
     <div className="space-y-4">
@@ -122,29 +118,12 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
           Voice capture is not supported in this browser. Switch to a supported browser to keep practicing in English.
         </p>
       )}
-      <form onSubmit={handleSubmit} className="space-y-2">
-        <label className="block text-sm font-semibold text-slate-700" htmlFor="chat-input-textarea">
-          Your English response
-        </label>
-        <textarea
-          id="chat-input-textarea"
-          value={message}
-          onChange={handleChange}
-          disabled={disabled}
-          placeholder={speechSupported ? "Speak or type your answer in English" : "Type your answer in English"}
-          className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-900 shadow focus-visible:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-blue-50"
-          rows={4}
-        />
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            disabled={disabled || message.trim().length === 0}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700"
-          >
-            {mode === "voice" ? "Send English Reply" : "Next English Question"}
-          </button>
+      {lastCaptured && (
+        <div className="rounded-lg border border-blue-200 bg-white/60 p-3 text-xs text-slate-700 shadow">
+          <p className="font-semibold text-blue-700">Last captured answer</p>
+          <p className="mt-1 leading-snug text-slate-800">{lastCaptured}</p>
         </div>
-      </form>
+      )}
     </div>
   );
 }
