@@ -13,7 +13,9 @@ def test_session_lifecycle():
     client = TestClient(app)
     start_resp = client.post("/api/session/start", json={"mode": "text", "duration_minutes": 5}, headers=get_auth_headers())
     assert start_resp.status_code == 200
-    session_id = start_resp.json()["session_id"]
+    start_body = start_resp.json()
+    assert start_body["mode"] == "text"
+    session_id = start_body["session_id"]
 
     chat_resp = client.post(
         "/api/chat",
@@ -21,6 +23,7 @@ def test_session_lifecycle():
         headers=get_auth_headers(),
     )
     assert chat_resp.status_code == 200
+    assert chat_resp.json()["mode"] == "text"
 
     finish_resp = client.post(
         "/api/session/finish", json={"session_id": session_id}, headers=get_auth_headers()
