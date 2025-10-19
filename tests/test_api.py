@@ -50,5 +50,5 @@ def test_session_lifecycle():
         json={"to": "test@example.com", "subject": "Report", "body": "See attached."},
         headers=get_auth_headers(),
     )
-    assert email_resp.status_code == 200
-    assert email_resp.json()["status"] == "queued"
+    assert email_resp.status_code == 503
+    assert "Email service is not configured" in email_resp.json()["detail"]

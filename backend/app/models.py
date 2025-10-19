@@ -155,3 +155,26 @@ class GPT5KeyRequest(BaseModel):
 
 class GPT5KeyStatus(BaseModel):
     configured: bool
+
+
+class EmailSettingsPublic(BaseModel):
+    provider: str
+    smtp_host: Optional[str] = None
+    smtp_port: int
+    smtp_username: Optional[str] = None
+    default_sender: Optional[EmailStr] = None
+
+
+class EmailConfigStatus(BaseModel):
+    configured: bool
+    missing_fields: List[str] = Field(default_factory=list)
+    settings: EmailSettingsPublic
+
+
+class EmailConfigUpdateRequest(BaseModel):
+    provider: Optional[str] = None
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    default_sender: Optional[EmailStr] = None

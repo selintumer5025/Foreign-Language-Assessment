@@ -5,6 +5,10 @@ import type {
   ChatMessage,
   ChatResponse,
   DualEvaluationResponse,
+  EmailConfigStatus,
+  EmailConfigUpdatePayload,
+  EmailRequestPayload,
+  EmailResponsePayload,
   Gpt5Status,
   ReportResponse,
   SessionFinishResponse,
@@ -15,6 +19,7 @@ import type {
 const SESSION_KEY = ["session"];
 const TRANSCRIPT_KEY = ["transcript"];
 const GPT5_STATUS_KEY = ["gpt5-status"];
+const EMAIL_STATUS_KEY = ["email-status"];
 
 export function useStartSession() {
   const queryClient = useQueryClient();
@@ -127,6 +132,39 @@ export function useConfigureGpt5() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData(GPT5_STATUS_KEY, data);
+    }
+  });
+}
+
+export function useEmailStatus() {
+  return useQuery({
+    queryKey: EMAIL_STATUS_KEY,
+    queryFn: async () => {
+      const { data } = await api.get<EmailConfigStatus>("/api/config/email");
+      return data;
+    },
+    staleTime: Infinity,
+  });
+}
+
+export function useConfigureEmail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: EmailConfigUpdatePayload) => {
+      const { data } = await api.post<EmailConfigStatus>("/api/config/email", payload);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(EMAIL_STATUS_KEY, data);
+    }
+  });
+}
+
+export function useSendEmail() {
+  return useMutation({
+    mutationFn: async (payload: EmailRequestPayload) => {
+      const { data } = await api.post<EmailResponsePayload>("/api/email", payload);
+      return data;
     }
   });
 }
