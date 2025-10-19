@@ -22,8 +22,6 @@ import type {
   InteractionMode,
   SessionFinishResponse
 } from "../types";
-
-const REPORT_RECIPIENT = "selintumer@gmail.com";
 const SAMPLE_RESPONSES = [
   "Certainly! One experience that stands out is when our team had to deliver a new feature under a strict deadline. I coordinated the project timeline, clarified ownership, and hosted daily check-ins to surface blockers quickly. As a result, we shipped on time and the customer adoption rate exceeded expectations.",
   "I would describe my communication style as clear and empathetic. Whether I'm working with stakeholders or mentoring teammates, I aim to translate complex ideas into actionable next steps while making space for questions and feedback.",
@@ -56,7 +54,8 @@ export function ChatPanel() {
     smtp_port: "587",
     smtp_username: "",
     smtp_password: "",
-    default_sender: ""
+    default_sender: "",
+    target_email: ""
   });
   const [emailConfigDismissed, setEmailConfigDismissed] = useState(false);
   const [emailBannerMessage, setEmailBannerMessage] = useState<string | null>(null);
@@ -125,6 +124,7 @@ export function ChatPanel() {
         smtp_port: String(status.settings.smtp_port ?? fallbackPort),
         smtp_username: status.settings.smtp_username ?? "",
         default_sender: status.settings.default_sender ?? "",
+        target_email: status.target_email ?? "",
       };
     });
 
@@ -186,7 +186,12 @@ export function ChatPanel() {
     setReportUrl(report.report_url);
     setEmailFeedback(null);
 
-    if (emailStatusQuery.data?.configured) {
+    const configuredRecipient =
+      emailStatusQuery.data?.target_email?.trim() ||
+      emailForm.target_email.trim() ||
+      "";
+
+    if (emailStatusQuery.data?.configured && configuredRecipient) {
       const subject = `Dil Değerlendirme Raporu - ${evaluation.session.id}`;
       const body = [
         "Merhaba,",
@@ -199,14 +204,14 @@ export function ChatPanel() {
 
       try {
         await sendEmail.mutateAsync({
-          to: REPORT_RECIPIENT,
+          to: configuredRecipient,
           subject,
           body,
           links: [report.report_url],
         });
         setEmailFeedback({
           type: "success",
-          message: `Rapor ${REPORT_RECIPIENT} adresine e-posta ile gönderildi.`,
+          message: `Rapor ${configuredRecipient} adresine e-posta ile gönderildi.`,
         });
       } catch (error) {
         console.error("Failed to send report email", error);
@@ -218,7 +223,7 @@ export function ChatPanel() {
     } else {
       setEmailFeedback({
         type: "warning",
-        message: `E-posta ayarları eksik olduğu için rapor ${REPORT_RECIPIENT} adresine gönderilemedi.`,
+        message: "E-posta ayarları eksik olduğu veya alıcı tanımlanmadığı için rapor gönderilemedi.",
       });
     }
   };
@@ -273,6 +278,7 @@ export function ChatPanel() {
     if (emailForm.smtp_username.trim()) payload.smtp_username = emailForm.smtp_username.trim();
     if (emailForm.smtp_password.trim()) payload.smtp_password = emailForm.smtp_password.trim();
     if (emailForm.default_sender.trim()) payload.default_sender = emailForm.default_sender.trim();
+    if (emailForm.target_email.trim()) payload.target_email = emailForm.target_email.trim();
     const parsedPort = Number(emailForm.smtp_port);
     if (!Number.isNaN(parsedPort) && parsedPort > 0) {
       payload.smtp_port = parsedPort;
@@ -399,6 +405,18 @@ export function ChatPanel() {
                   className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
                   placeholder="smtp.mailprovider.com"
                   disabled={configureEmail.isPending}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-300" htmlFor="target_email">Varsayılan Rapor Alıcısı</label>
+                <input
+                  id="target_email"
+                  name="target_email"
+                  type="email"
+                  value={emailForm.target_email}
+                  onChange={handleEmailInputChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  placeholder="ornek@domain.com"
                 />
               </div>
               <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">

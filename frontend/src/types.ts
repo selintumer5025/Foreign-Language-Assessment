@@ -99,6 +99,7 @@ export interface EmailConfigStatus {
   configured: boolean;
   missing_fields: string[];
   settings: EmailSettingsInfo;
+  target_email?: string | null;
 }
 
 export interface EmailRequestPayload {
@@ -116,6 +117,7 @@ export interface EmailConfigUpdatePayload {
   smtp_username?: string;
   smtp_password?: string;
   default_sender?: string;
+  target_email?: string;
 }
 
 export interface EmailResponsePayload {

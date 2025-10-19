@@ -169,6 +169,7 @@ class EmailConfigStatus(BaseModel):
     configured: bool
     missing_fields: List[str] = Field(default_factory=list)
     settings: EmailSettingsPublic
+    target_email: Optional[EmailStr] = None
 
 
 class EmailConfigUpdateRequest(BaseModel):
@@ -178,3 +179,4 @@ class EmailConfigUpdateRequest(BaseModel):
     smtp_username: Optional[str] = None
     smtp_password: Optional[str] = None
     default_sender: Optional[EmailStr] = None
+    target_email: Optional[EmailStr] = None
