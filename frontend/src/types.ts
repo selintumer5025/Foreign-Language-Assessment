@@ -82,3 +82,7 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
 }
+
+export interface Gpt5Status {
+  configured: boolean;
+}

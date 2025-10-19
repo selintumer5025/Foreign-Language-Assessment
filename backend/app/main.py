@@ -7,12 +7,14 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from .auth import get_current_token
-from .config import get_settings
+from .config import get_settings, set_gpt5_api_key
 from .models import (
     ChatMessage,
     ChatRequest,
     ChatResponse,
     DualEvaluationResponse,
+    GPT5KeyRequest,
+    GPT5KeyStatus,
     EmailRequest,
     EmailResponse,
     EvaluationRequest,
@@ -26,6 +28,7 @@ from .models import (
 )
 from .services.conversation import next_prompt
 from .services.evaluation import evaluate_transcript
+from .services.gpt5_client import clear_gpt5_client_cache
 from .services.emailer import send_email
 from .services.reporting import persist_report
 from .services.session_store import get_store
@@ -131,6 +134,23 @@ def generate_report(payload: ReportRequest, _: str = Depends(get_current_token))
 @app.post("/api/email", response_model=EmailResponse, tags=["email"])
 def send_report_email(payload: EmailRequest, _: str = Depends(get_current_token)) -> EmailResponse:
     return send_email(payload)
+
+
+@app.get("/api/config/gpt5", response_model=GPT5KeyStatus, tags=["config"])
+def gpt5_status(_: str = Depends(get_current_token)) -> GPT5KeyStatus:
+    settings_snapshot = get_settings()
+    return GPT5KeyStatus(configured=bool(settings_snapshot.gpt5_api_key))
+
+
+@app.post("/api/config/gpt5", response_model=GPT5KeyStatus, tags=["config"])
+def configure_gpt5(payload: GPT5KeyRequest, _: str = Depends(get_current_token)) -> GPT5KeyStatus:
+    api_key = payload.api_key.strip()
+    if not api_key:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="API key cannot be blank")
+    set_gpt5_api_key(api_key)
+    clear_gpt5_client_cache()
+    settings_snapshot = get_settings()
+    return GPT5KeyStatus(configured=bool(settings_snapshot.gpt5_api_key))
 
 
 @app.on_event("startup")

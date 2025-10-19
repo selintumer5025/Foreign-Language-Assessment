@@ -17,6 +17,7 @@ from ..models import (
     StandardEvaluation,
     TranscriptMetadata,
 )
+from .gpt5_client import GPT5APIError, get_gpt5_client
 
 CONFIG_ROOT = Path(__file__).resolve().parents[3] / "configs"
 SUPPORTED_STANDARDS: Sequence[str] = ("toefl", "ielts")
@@ -456,24 +457,71 @@ def evaluate_transcript(
 
     metadata = metadata or TranscriptMetadata()
     metrics = _compute_metrics(transcript)
+    metrics_payload = {
+        "total_words": metrics.total_words,
+        "unique_words": metrics.unique_words,
+        "avg_sentence_length": metrics.avg_sentence_length,
+        "turns": metrics.turns,
+        "sample_user_messages": metrics.user_messages[:5],
+    }
 
-    standards: List[StandardEvaluation] = []
+    base_results: Dict[str, StandardEvaluation] = {}
+    configs: Dict[str, dict | None] = {}
     for standard_id in SUPPORTED_STANDARDS:
         config = None
         try:
             config = _load_standard_config(standard_id)
-            standard_result = _build_standard_result(standard_id, config, metrics)
-        except Exception as exc:  # noqa: BLE001 - ensure we always capture failures
-            standard_result = _failed_standard(standard_id, config, exc)
-        standards.append(standard_result)
-
-    crosswalk = _summarise_crosswalk(standards)
+            configs[standard_id] = config
+            base_results[standard_id] = _build_standard_result(standard_id, config, metrics)
+        except Exception as exc:  # noqa: BLE001
+            configs[standard_id] = config
+            base_results[standard_id] = _failed_standard(standard_id, config, exc)
 
     warnings: List[str] = []
+    gpt_payload: dict | None = None
+    try:
+        client = get_gpt5_client()
+        gpt_payload = client.generate_evaluation(transcript, metadata, metrics_payload)
+    except GPT5APIError as exc:
+        warnings.append(f"GPT-5 evaluation unavailable: {exc}")
+
+    standards: List[StandardEvaluation] = []
+    gpt_standards = gpt_payload.get("standards") if isinstance(gpt_payload, dict) else None
+    for standard_id in SUPPORTED_STANDARDS:
+        base = base_results[standard_id]
+        entry = None
+        if isinstance(gpt_standards, list):
+            for candidate in gpt_standards:
+                if isinstance(candidate, dict) and candidate.get("standard_id") == standard_id:
+                    entry = candidate
+                    break
+        if entry is not None:
+            try:
+                merged = _merge_standard_with_gpt(base, entry)
+            except Exception as exc:  # noqa: BLE001 - ensure failure is captured per standard
+                merged = _failed_standard(standard_id, configs.get(standard_id), exc)
+        else:
+            merged = base
+        standards.append(merged)
+
+    fallback_crosswalk = _summarise_crosswalk(standards)
+    if isinstance(gpt_payload, dict):
+        crosswalk = _merge_crosswalk_payload(gpt_payload.get("crosswalk"), fallback_crosswalk)
+        gpt_warnings = gpt_payload.get("warnings")
+        if isinstance(gpt_warnings, list):
+            warnings.extend(str(item) for item in gpt_warnings if isinstance(item, str) and item.strip())
+    else:
+        crosswalk = fallback_crosswalk
+
     if metadata.duration_sec is not None and metadata.duration_sec < 120:
         warnings.append("Low evidence; scores may be unstable (short duration).")
     if metrics.total_words < 150:
         warnings.append("Low evidence; limited transcript length may affect reliability.")
+
+    unique_warnings: List[str] = []
+    for warning in warnings:
+        if warning and warning not in unique_warnings:
+            unique_warnings.append(warning)
 
     session_info = _build_session_info(session_id, transcript, metadata)
 
@@ -481,7 +529,122 @@ def evaluate_transcript(
         session=session_info,
         standards=standards,
         crosswalk=crosswalk,
-        warnings=warnings or None,
+        warnings=unique_warnings or None,
         session_id=session_info.id,
         cefr_level=crosswalk.consensus_cefr,
     )
+
+
+def _merge_standard_with_gpt(base: StandardEvaluation, payload: dict) -> StandardEvaluation:
+    if base.status != "ok" or not isinstance(payload, dict):
+        return base
+
+    merged = base.model_copy(deep=True)
+
+    label = payload.get("label")
+    if isinstance(label, str) and label.strip():
+        merged.label = label.strip()
+
+    overall = payload.get("overall")
+    if overall is not None:
+        try:
+            merged.overall = float(overall)
+        except (TypeError, ValueError):
+            pass
+
+    cefr = payload.get("cefr")
+    if isinstance(cefr, str) and cefr.strip():
+        merged.cefr = cefr.strip()
+
+    criteria_payload = payload.get("criteria")
+    if isinstance(criteria_payload, dict):
+        for criterion_id, assessment in merged.criteria.items():
+            criterion_update = criteria_payload.get(criterion_id)
+            if not isinstance(criterion_update, dict):
+                continue
+            score = criterion_update.get("score")
+            comment = criterion_update.get("comment")
+            if score is not None:
+                try:
+                    assessment.score = float(score)
+                except (TypeError, ValueError):
+                    pass
+            if comment is not None:
+                assessment.comment = str(comment)
+
+        for criterion_id, criterion_update in criteria_payload.items():
+            if criterion_id in merged.criteria or not isinstance(criterion_update, dict):
+                continue
+            score = criterion_update.get("score")
+            comment = criterion_update.get("comment", "")
+            if score is None:
+                continue
+            try:
+                score_value = float(score)
+            except (TypeError, ValueError):
+                continue
+            merged.criteria[criterion_id] = CriterionAssessment(score=score_value, comment=str(comment))
+            merged.criterion_labels.setdefault(criterion_id, criterion_id.replace("_", " ").title())
+
+    errors_payload = payload.get("common_errors")
+    parsed_errors: List[CommonError] = []
+    if isinstance(errors_payload, list):
+        for item in errors_payload:
+            if not isinstance(item, dict):
+                continue
+            issue = item.get("issue")
+            fix = item.get("fix")
+            if issue and fix:
+                parsed_errors.append(CommonError(issue=str(issue), fix=str(fix)))
+    if parsed_errors:
+        merged.common_errors = parsed_errors
+
+    recommendations_payload = payload.get("recommendations")
+    if isinstance(recommendations_payload, list):
+        cleaned_recommendations = [
+            str(rec).strip() for rec in recommendations_payload if isinstance(rec, str) and rec.strip()
+        ]
+        if len(cleaned_recommendations) >= 5:
+            merged.recommendations = cleaned_recommendations[:5]
+        elif cleaned_recommendations:
+            additions = [rec for rec in cleaned_recommendations if rec not in merged.recommendations]
+            merged.recommendations = (merged.recommendations + additions)[:5]
+
+    evidence_payload = payload.get("evidence_quotes")
+    if isinstance(evidence_payload, list):
+        cleaned_quotes = [str(q).strip() for q in evidence_payload if isinstance(q, str) and q.strip()]
+        if cleaned_quotes:
+            while len(cleaned_quotes) < 2 and cleaned_quotes:
+                cleaned_quotes.append(cleaned_quotes[0])
+            merged.evidence_quotes = cleaned_quotes[:2]
+
+    return merged
+
+
+def _merge_crosswalk_payload(payload: dict | None, fallback: CrosswalkSummary) -> CrosswalkSummary:
+    if not isinstance(payload, dict):
+        return fallback
+
+    merged = fallback.model_copy(deep=True)
+
+    consensus = payload.get("consensus_cefr")
+    if isinstance(consensus, str) and consensus.strip():
+        merged.consensus_cefr = consensus.strip()
+
+    notes = payload.get("notes")
+    if isinstance(notes, str) and notes.strip():
+        merged.notes = notes.strip()
+
+    strengths = payload.get("strengths")
+    if isinstance(strengths, list) and strengths:
+        cleaned_strengths = [str(item).strip() for item in strengths if isinstance(item, str) and item.strip()]
+        if cleaned_strengths:
+            merged.strengths = cleaned_strengths[:2]
+
+    focus = payload.get("focus")
+    if isinstance(focus, list) and focus:
+        cleaned_focus = [str(item).strip() for item in focus if isinstance(item, str) and item.strip()]
+        if cleaned_focus:
+            merged.focus = cleaned_focus[:2]
+
+    return merged

@@ -1,5 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useChat, useCurrentSession, useFinishSession, useGenerateReport, useStartSession, useTranscript, useEvaluateSession } from "../api/hooks";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useChat,
+  useConfigureGpt5,
+  useCurrentSession,
+  useEvaluateSession,
+  useFinishSession,
+  useGenerateReport,
+  useGpt5Status,
+  useStartSession,
+  useTranscript,
+} from "../api/hooks";
 import { ChatInput } from "./ChatInput";
 import { MessageBubble } from "./MessageBubble";
 import { ScoreCard } from "./ScoreCard";
@@ -13,12 +23,24 @@ export function ChatPanel() {
   const finishSession = useFinishSession();
   const evaluateSession = useEvaluateSession();
   const generateReport = useGenerateReport();
+  const gpt5StatusQuery = useGpt5Status();
+  const configureGpt5 = useConfigureGpt5();
   const [evaluation, setEvaluation] = useState<DualEvaluationResponse | null>(null);
   const [sessionSummary, setSessionSummary] = useState<SessionFinishResponse | null>(null);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const lastSpokenIdRef = useRef<string | null>(null);
+  const [apiKeyInput, setApiKeyInput] = useState("");
 
-  const canChat = Boolean(session?.session_id) && !evaluation;
+  const gptConfigured = gpt5StatusQuery.data?.configured ?? false;
+  const requireApiKey = gpt5StatusQuery.isSuccess && !gptConfigured;
+  const blockingForConfig = gpt5StatusQuery.isLoading || requireApiKey;
+  const apiKeyError = configureGpt5.isError
+    ? configureGpt5.error instanceof Error
+      ? configureGpt5.error.message
+      : "Failed to save API key."
+    : null;
+
+  const canChat = Boolean(session?.session_id) && !evaluation && !blockingForConfig;
   const activeMode: InteractionMode = session?.mode ?? "voice";
 
   useEffect(() => {
@@ -47,6 +69,7 @@ export function ChatPanel() {
   }, [session?.mode, transcript]);
 
   const handleStart = async () => {
+    if (blockingForConfig) return;
     setEvaluation(null);
     setSessionSummary(null);
     setReportUrl(null);
@@ -54,18 +77,18 @@ export function ChatPanel() {
   };
 
   const handleSend = async (message: string) => {
-    if (!session?.session_id) return;
+    if (!session?.session_id || blockingForConfig) return;
     await chatMutation.mutateAsync({ session_id: session.session_id, user_message: message });
   };
 
   const handleFinish = async () => {
-    if (!session?.session_id) return;
+    if (!session?.session_id || blockingForConfig) return;
     const summary = await finishSession.mutateAsync({ session_id: session.session_id });
     setSessionSummary(summary);
   };
 
   const handleEvaluate = async () => {
-    if (!session?.session_id) return;
+    if (!session?.session_id || blockingForConfig) return;
     const result = await evaluateSession.mutateAsync({ session_id: session.session_id });
     setEvaluation(result);
   };
@@ -89,12 +112,81 @@ export function ChatPanel() {
       chatMutation.isPending ||
       finishSession.isPending ||
       evaluateSession.isPending ||
+      generateReport.isPending ||
+      configureGpt5.isPending,
+    [
+      startSession.isPending,
+      chatMutation.isPending,
+      finishSession.isPending,
+      evaluateSession.isPending,
       generateReport.isPending,
-    [startSession.isPending, chatMutation.isPending, finishSession.isPending, evaluateSession.isPending, generateReport.isPending]
+      configureGpt5.isPending,
+    ]
   );
+
+  const handleApiKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setApiKeyInput(event.target.value);
+  };
+
+  const handleSaveApiKey = async () => {
+    const trimmed = apiKeyInput.trim();
+    if (!trimmed) return;
+    try {
+      await configureGpt5.mutateAsync({ api_key: trimmed });
+      setApiKeyInput("");
+      await gpt5StatusQuery.refetch();
+    } catch (error) {
+      console.error("Failed to configure GPT-5", error);
+    }
+  };
 
   return (
     <div className="relative min-h-screen">
+      {gpt5StatusQuery.isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+          <div className="rounded-2xl border border-violet-500/30 bg-slate-900/90 px-8 py-6 text-center text-slate-200 shadow-2xl">
+            <p className="text-lg font-semibold">Checking GPT-5 configuration…</p>
+          </div>
+        </div>
+      )}
+
+      {requireApiKey && !gpt5StatusQuery.isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-violet-500/50 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
+            <h2 className="text-2xl font-bold">Connect GPT-5 for Scoring</h2>
+            <p className="mt-2 text-sm text-slate-300">
+              Enter your GPT-5 API key to enable TOEFL/IELTS evaluations. The key is stored in server memory for this session only.
+            </p>
+            <label className="mt-6 block text-sm font-semibold text-slate-300" htmlFor="gpt5-api-key">
+              GPT-5 API Key
+            </label>
+            <input
+              id="gpt5-api-key"
+              type="password"
+              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+              placeholder="sk-..."
+              value={apiKeyInput}
+              onChange={handleApiKeyChange}
+              disabled={configureGpt5.isPending}
+            />
+            {apiKeyError ? (
+              <p className="mt-2 text-sm text-rose-400">{apiKeyError}</p>
+            ) : (
+              <p className="mt-2 text-xs text-slate-400">Need help? Contact your administrator for access.</p>
+            )}
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                onClick={handleSaveApiKey}
+                disabled={!apiKeyInput.trim() || configureGpt5.isPending}
+                className="group relative overflow-hidden rounded-xl px-6 py-3 font-semibold text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform duration-300 group-hover:scale-105"></div>
+                <span className="relative">Save API Key</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Animated Background - Dark Theme */}
       <div className="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 -z-10"></div>
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
@@ -123,7 +215,8 @@ export function ChatPanel() {
             </p>
             <button
               onClick={handleStart}
-              className="mt-6 group/btn relative px-8 py-4 rounded-xl font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105"
+              disabled={blockingForConfig || isLoading}
+              className="mt-6 group/btn relative px-8 py-4 rounded-xl font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform duration-300 group-hover/btn:scale-110"></div>
               <span className="relative text-white">
@@ -154,7 +247,7 @@ export function ChatPanel() {
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={handleFinish}
-                  disabled={!session || isLoading}
+                  disabled={!session || isLoading || blockingForConfig}
                   className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
                 >
                   <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-blue-600 to-cyan-600'} transition-transform duration-300 group-hover:scale-110`}></div>
@@ -162,7 +255,7 @@ export function ChatPanel() {
                 </button>
                 <button
                   onClick={handleEvaluate}
-                  disabled={!session || isLoading}
+                  disabled={!session || isLoading || blockingForConfig}
                   className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
                 >
                   <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-violet-600 to-fuchsia-600'} transition-transform duration-300 group-hover:scale-110`}></div>
@@ -170,7 +263,7 @@ export function ChatPanel() {
                 </button>
                 <button
                   onClick={handleReport}
-                  disabled={!evaluation || !sessionSummary || isLoading}
+                  disabled={!evaluation || !sessionSummary || isLoading || blockingForConfig}
                   title={
                     !evaluation
                       ? "Run an evaluation to unlock the detailed report."
