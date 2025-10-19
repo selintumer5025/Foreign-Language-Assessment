@@ -24,6 +24,12 @@ import type {
 } from "../types";
 
 const REPORT_RECIPIENT = "selintumer@gmail.com";
+const SAMPLE_RESPONSES = [
+  "Certainly! One experience that stands out is when our team had to deliver a new feature under a strict deadline. I coordinated the project timeline, clarified ownership, and hosted daily check-ins to surface blockers quickly. As a result, we shipped on time and the customer adoption rate exceeded expectations.",
+  "I would describe my communication style as clear and empathetic. Whether I'm working with stakeholders or mentoring teammates, I aim to translate complex ideas into actionable next steps while making space for questions and feedback.",
+  "A recent challenge involved migrating part of our infrastructure without disrupting users. I designed a phased rollout, wrote automation scripts to validate data integrity, and coordinated with support teams. The migration completed smoothly and reduced latency by nearly 20 percent.",
+  "My long-term goal is to keep growing as a product-minded engineer. That means staying close to user feedback, experimenting with new technologies, and sharing knowledge through talks or documentation so the entire team levels up together.",
+] as const;
 
 export function ChatPanel() {
   const { data: transcript } = useTranscript();
@@ -55,6 +61,7 @@ export function ChatPanel() {
   const [emailConfigDismissed, setEmailConfigDismissed] = useState(false);
   const [emailBannerMessage, setEmailBannerMessage] = useState<string | null>(null);
   const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error" | "warning"; message: string } | null>(null);
+  const [autoResponseIndex, setAutoResponseIndex] = useState(0);
   const emailFeedbackClass = useMemo(() => {
     if (!emailFeedback) return "";
     switch (emailFeedback.type) {
@@ -135,12 +142,17 @@ export function ChatPanel() {
     }
   }, [emailStatusQuery.isError]);
 
-  const handleStart = async () => {
-    if (blockingForConfig) return;
+  const resetSessionState = () => {
     setEvaluation(null);
     setSessionSummary(null);
     setReportUrl(null);
     setEmailFeedback(null);
+  };
+
+  const handleStart = async () => {
+    if (blockingForConfig) return;
+    resetSessionState();
+    setAutoResponseIndex(0);
     await startSession.mutateAsync({ mode: "voice", duration_minutes: 10 });
   };
 
@@ -284,6 +296,36 @@ export function ChatPanel() {
     setEmailModalOpen(false);
     setEmailConfigDismissed(true);
     setEmailBannerMessage("E-posta ayarları tamamlanmadığı için raporlar otomatik gönderilmeyecek.");
+  };
+
+  const handleAutoResponse = async () => {
+    if (blockingForConfig || chatMutation.isPending || startSession.isPending) return;
+
+    let activeSession = session;
+    const needsNewSession = !activeSession?.session_id || evaluation || sessionSummary;
+
+    if (needsNewSession) {
+      resetSessionState();
+      setAutoResponseIndex(0);
+      try {
+        const result = await startSession.mutateAsync({ mode: "voice", duration_minutes: 10 });
+        activeSession = result;
+      } catch (error) {
+        console.error("Failed to start session for auto response", error);
+        return;
+      }
+    }
+
+    if (!activeSession?.session_id) return;
+
+    const sample = SAMPLE_RESPONSES[autoResponseIndex % SAMPLE_RESPONSES.length];
+
+    try {
+      await chatMutation.mutateAsync({ session_id: activeSession.session_id, user_message: sample });
+      setAutoResponseIndex((prev) => (prev + 1) % SAMPLE_RESPONSES.length);
+    } catch (error) {
+      console.error("Failed to send auto interview response", error);
+    }
   };
 
   return (
@@ -480,16 +522,26 @@ export function ChatPanel() {
             <p className="text-slate-400 text-lg max-w-2xl mx-auto">
               The entire experience runs in English so you can focus on fluency, clarity, and interview confidence.
             </p>
-            <button
-              onClick={handleStart}
-              disabled={blockingForConfig || isLoading}
-              className="mt-6 group/btn relative px-8 py-4 rounded-xl font-semibold text-lg overflow-hidden transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform duration-300 group-hover/btn:scale-110"></div>
-              <span className="relative text-white">
-                {session ? "🔄 Restart English Session" : "▶️ Begin English Session"}
-              </span>
-            </button>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={handleStart}
+                disabled={blockingForConfig || isLoading}
+                className="group/btn relative overflow-hidden rounded-xl px-8 py-4 text-lg font-semibold transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform duration-300 group-hover/btn:scale-110"></div>
+                <span className="relative text-white">
+                  {session ? "🔄 Restart English Session" : "▶️ Begin English Session"}
+                </span>
+              </button>
+              <button
+                onClick={handleAutoResponse}
+                disabled={blockingForConfig || isLoading}
+                className="group relative overflow-hidden rounded-xl px-6 py-4 text-lg font-semibold transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 transition-transform duration-300 group-hover:scale-110"></div>
+                <span className="relative text-white">⚡ Generate Interview Answer</span>
+              </button>
+            </div>
           </div>
 
           {/* Voice Capture & Actions */}
