@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, EmailStr
 
@@ -55,31 +57,72 @@ class SessionFinishResponse(BaseModel):
     duration_seconds: int
 
 
-class EvaluationDimensionScore(BaseModel):
-    name: str
-    score: float
-    weight: float
-    feedback: str
-
-
 class EvaluationRequest(BaseModel):
     session_id: Optional[str] = None
     transcript: Optional[List[ChatMessage]] = None
+    metadata: Optional["TranscriptMetadata"] = None
 
 
-class EvaluationResponse(BaseModel):
-    session_id: Optional[str] = None
-    overall_score: float
+class TranscriptMetadata(BaseModel):
+    lang: Optional[str] = None
+    duration_sec: Optional[int] = None
+    turns: Optional[int] = None
+    word_count: Optional[int] = None
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+
+
+class SessionInfo(BaseModel):
+    id: str
+    started_at: datetime
+    ended_at: datetime
+    duration_sec: int
+    turns: int
+
+
+class CriterionAssessment(BaseModel):
+    score: float
+    comment: str
+
+
+class CommonError(BaseModel):
+    issue: str
+    fix: str
+
+
+class StandardEvaluation(BaseModel):
+    standard_id: str
+    label: str
+    overall: Optional[float] = None
+    cefr: Optional[str] = None
+    criteria: Dict[str, CriterionAssessment] = Field(default_factory=dict)
+    criterion_labels: Dict[str, str] = Field(default_factory=dict)
+    common_errors: List[CommonError] = Field(default_factory=list)
+    recommendations: List[str] = Field(default_factory=list)
+    evidence_quotes: List[str] = Field(default_factory=list)
+    status: str = Field(default="ok", pattern="^(ok|failed)$")
+    error: Optional[str] = None
+
+
+class CrosswalkSummary(BaseModel):
+    consensus_cefr: str
+    notes: str
+    strengths: List[str]
+    focus: List[str]
+
+
+class DualEvaluationResponse(BaseModel):
+    session: SessionInfo
+    standards: List[StandardEvaluation]
+    crosswalk: CrosswalkSummary
+    warnings: Optional[List[str]] = None
+    session_id: str
     cefr_level: str
-    summary: str
-    dimensions: List[EvaluationDimensionScore]
-    errors: List[str]
-    action_plan: List[str]
     generated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class ReportRequest(BaseModel):
-    evaluation: EvaluationResponse
+    evaluation: DualEvaluationResponse
     session_metadata: Optional[dict] = None
 
 

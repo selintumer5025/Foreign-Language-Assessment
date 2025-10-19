@@ -5,71 +5,148 @@ from pathlib import Path
 from typing import Optional
 
 from ..config import get_settings
-from ..models import EvaluationResponse
+from ..models import DualEvaluationResponse, StandardEvaluation
 
 REPORTS_DIR = Path("backend/generated_reports")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _format_dimension_rows(evaluation: EvaluationResponse) -> str:
+def _format_criteria_rows(standard: StandardEvaluation) -> str:
     rows = []
-    for dimension in evaluation.dimensions:
+    for criterion_id, criterion in standard.criteria.items():
+        label = standard.criterion_labels.get(criterion_id, criterion_id.replace("_", " ").title())
+        max_scale = 4 if standard.standard_id == "toefl" else 9
         rows.append(
-            f"<tr><td>{dimension.name}</td><td>{dimension.score:.2f}/4</td><td>{dimension.feedback}</td></tr>"
+            "<tr>"
+            f"<td>{label}</td>"
+            f"<td>{criterion.score:.2f} / {max_scale}</td>"
+            f"<td>{criterion.comment}</td>"
+            "</tr>"
         )
     return "".join(rows)
 
 
-def build_html_report(evaluation: EvaluationResponse, session_metadata: Optional[dict] = None) -> str:
-    settings = get_settings()
-    metadata = session_metadata or {}
-    started_at = metadata.get("started_at")
-    started_at_str = started_at if isinstance(started_at, str) else "Not available"
-    duration = metadata.get("duration_seconds", "-" )
+def _format_errors_list(standard: StandardEvaluation) -> str:
+    return "".join(f"<li><strong>{error.issue}:</strong> {error.fix}</li>" for error in standard.common_errors)
 
-    dimension_rows = _format_dimension_rows(evaluation)
-    errors_list = "".join(f"<li>{err}</li>" for err in evaluation.errors)
-    actions_list = "".join(f"<li>{item}</li>" for item in evaluation.action_plan)
+
+def _format_quotes(quotes: list[str]) -> str:
+    return "".join(f"<blockquote>“{quote}”</blockquote>" for quote in quotes)
+
+
+def _render_standard_section(standard: StandardEvaluation) -> str:
+    if standard.status != "ok":
+        return f"""
+        <section class=\"card\">
+            <h2>{standard.label}</h2>
+            <div class=\"alert alert-error\">Evaluation failed: {standard.error or 'Unknown error'}.</div>
+        </section>
+        """
+
+    criteria_rows = _format_criteria_rows(standard)
+    errors_list = _format_errors_list(standard)
+    recs_list = "".join(f"<li>{item}</li>" for item in standard.recommendations)
+    quotes_html = _format_quotes(standard.evidence_quotes)
+    overall_caption = (
+        f"{standard.overall:.2f} / 4" if standard.standard_id == "toefl" else f"Band {standard.overall:.1f}"
+    )
+
+    return f"""
+    <section class=\"card\">
+        <div class=\"card-header\">
+            <h2>{standard.label}</h2>
+            <div class=\"score\">{overall_caption}</div>
+            <div class=\"cefr\">Approx. CEFR: {standard.cefr or '—'}</div>
+        </div>
+        <h3>Criteria Breakdown</h3>
+        <table>
+            <thead>
+                <tr><th>Criterion</th><th>Score</th><th>Comment</th></tr>
+            </thead>
+            <tbody>
+                {criteria_rows}
+            </tbody>
+        </table>
+        <h3>Common Errors</h3>
+        <ul>{errors_list}</ul>
+        <h3>Recommendations</h3>
+        <ol>{recs_list}</ol>
+        <h3>Evidence Quotes</h3>
+        <div class=\"quotes\">{quotes_html}</div>
+    </section>
+    """
+
+
+def build_html_report(evaluation: DualEvaluationResponse, session_metadata: Optional[dict] = None) -> str:
+    settings = get_settings()
+    warnings_html = "".join(f"<div class=\"alert alert-warning\">{w}</div>" for w in (evaluation.warnings or []))
+
+    standard_sections = "".join(_render_standard_section(std) for std in evaluation.standards)
+
+    toefl_badge = next((s for s in evaluation.standards if s.standard_id == "toefl"), None)
+    ielts_badge = next((s for s in evaluation.standards if s.standard_id == "ielts"), None)
+
+    def badge_text(standard: StandardEvaluation | None, denom: str) -> str:
+        if not standard or standard.status != "ok" or standard.overall is None:
+            return f"{denom} unavailable"
+        if standard.standard_id == "toefl":
+            return f"TOEFL {standard.overall:.2f}/4 (~{standard.cefr})"
+        return f"IELTS {standard.overall:.1f}/9 (~{standard.cefr})"
+
+    badges = "".join(
+        f"<span class=\"badge\">{text}</span>"
+        for text in (
+            badge_text(toefl_badge, "TOEFL"),
+            badge_text(ielts_badge, "IELTS"),
+            f"Consensus CEFR: {evaluation.crosswalk.consensus_cefr}",
+        )
+    )
 
     html = f"""
     <html lang=\"{settings.report_language}\">
     <head>
         <meta charset=\"utf-8\" />
-        <title>English Speaking Assessment Report</title>
+        <title>Dual Speaking Assessment Report</title>
         <style>
             body {{ font-family: Arial, sans-serif; margin: 2rem; color: #1f2933; }}
-            h1, h2 {{ color: #0f172a; }}
-            .summary-box {{ background: #f1f5f9; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; }}
+            h1, h2, h3 {{ color: #0f172a; }}
+            .summary {{ background: #eef2ff; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 2rem; }}
+            .summary .badge {{ display: inline-block; background: #4338ca; color: #fff; padding: 0.4rem 0.8rem; border-radius: 999px; font-size: 0.9rem; margin-right: 0.5rem; }}
+            .card {{ background: #fff; border: 1px solid #cbd5e1; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08); }}
+            .card-header {{ display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }}
             table {{ width: 100%; border-collapse: collapse; margin-bottom: 1rem; }}
-            th, td {{ border: 1px solid #cbd5e1; padding: 0.75rem; text-align: left; }}
-            th {{ background: #e2e8f0; }}
+            th, td {{ border: 1px solid #e2e8f0; padding: 0.75rem; text-align: left; }}
+            th {{ background: #f8fafc; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.08em; }}
+            ul, ol {{ margin-left: 1.5rem; }}
+            blockquote {{ border-left: 4px solid #6366f1; padding-left: 1rem; margin: 0.5rem 0; font-style: italic; color: #4338ca; }}
+            .alert {{ padding: 0.75rem 1rem; border-radius: 0.75rem; margin-bottom: 1rem; }}
+            .alert-warning {{ background: #fef3c7; color: #92400e; }}
+            .alert-error {{ background: #fee2e2; color: #b91c1c; }}
             .metadata {{ font-size: 0.9rem; color: #475569; margin-top: 1rem; }}
+            .crosswalk {{ background: #ecfdf5; border-radius: 0.75rem; padding: 1.5rem; border: 1px solid #d1fae5; margin-bottom: 2rem; }}
+            .crosswalk h2 {{ margin-top: 0; }}
         </style>
     </head>
     <body>
         <h1>English Speaking Assessment Report</h1>
-        <div class=\"summary-box\">
-            <p><strong>Overall Score:</strong> {evaluation.overall_score:.2f} / 4</p>
-            <p><strong>CEFR Level:</strong> {evaluation.cefr_level}</p>
-            <p><strong>Summary:</strong> {evaluation.summary}</p>
+        <div class=\"summary\">
+            <p>{badges}</p>
+            <p><strong>Consensus CEFR:</strong> {evaluation.crosswalk.consensus_cefr}</p>
+            <p><strong>Cross-standard note:</strong> {evaluation.crosswalk.notes}</p>
         </div>
-        <h2>Detailed Scores</h2>
-        <table>
-            <thead>
-                <tr><th>Dimension</th><th>Score</th><th>Feedback</th></tr>
-            </thead>
-            <tbody>
-                {dimension_rows}
-            </tbody>
-        </table>
-        <h2>Common Errors & Corrections</h2>
-        <ul>{errors_list}</ul>
-        <h2>30-Day Action Plan</h2>
-        <ol>{actions_list}</ol>
+        {warnings_html}
+        <section class=\"crosswalk\">
+            <h2>Crosswalk Insights</h2>
+            <p><strong>Strengths:</strong> {', '.join(evaluation.crosswalk.strengths)}</p>
+            <p><strong>Focus Areas:</strong> {', '.join(evaluation.crosswalk.focus)}</p>
+        </section>
+        {standard_sections}
         <h2>Session Notes</h2>
-        <p><strong>Session ID:</strong> {evaluation.session_id or 'N/A'}</p>
-        <p><strong>Started At:</strong> {started_at_str}</p>
-        <p><strong>Duration:</strong> {duration} seconds</p>
+        <p><strong>Session ID:</strong> {evaluation.session.id}</p>
+        <p><strong>Started At:</strong> {evaluation.session.started_at.isoformat()}</p>
+        <p><strong>Ended At:</strong> {evaluation.session.ended_at.isoformat()}</p>
+        <p><strong>Duration:</strong> {evaluation.session.duration_sec} seconds</p>
+        <p><strong>Turns:</strong> {evaluation.session.turns}</p>
         <p><strong>Report Generated:</strong> {evaluation.generated_at.strftime('%Y-%m-%d %H:%M:%S')} (UTC)</p>
     </body>
     </html>
@@ -77,9 +154,9 @@ def build_html_report(evaluation: EvaluationResponse, session_metadata: Optional
     return html
 
 
-def persist_report(evaluation: EvaluationResponse, session_metadata: Optional[dict] = None) -> tuple[str, str]:
+def persist_report(evaluation: DualEvaluationResponse, session_metadata: Optional[dict] = None) -> tuple[str, str]:
     html = build_html_report(evaluation, session_metadata=session_metadata)
-    filename = f"report_{evaluation.session_id or 'adhoc'}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.html"
+    filename = f"report_{evaluation.session.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.html"
     filepath = REPORTS_DIR / filename
     filepath.write_text(html, encoding="utf-8")
     report_url = f"{get_settings().app_base_url}/reports/{filename}"

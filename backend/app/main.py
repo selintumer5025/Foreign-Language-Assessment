@@ -12,16 +12,17 @@ from .models import (
     ChatMessage,
     ChatRequest,
     ChatResponse,
+    DualEvaluationResponse,
     EmailRequest,
     EmailResponse,
     EvaluationRequest,
-    EvaluationResponse,
     ReportRequest,
     ReportResponse,
     SessionFinishRequest,
     SessionFinishResponse,
     SessionStartRequest,
     SessionStartResponse,
+    TranscriptMetadata,
 )
 from .services.conversation import next_prompt
 from .services.evaluation import evaluate_transcript
@@ -94,10 +95,11 @@ def finish_session(payload: SessionFinishRequest, _: str = Depends(get_current_t
     return response
 
 
-@app.post("/api/evaluate", response_model=EvaluationResponse, tags=["evaluation"])
-def evaluate(payload: EvaluationRequest, _: str = Depends(get_current_token)) -> EvaluationResponse:
+@app.post("/api/evaluate", response_model=DualEvaluationResponse, tags=["evaluation"])
+def evaluate(payload: EvaluationRequest, _: str = Depends(get_current_token)) -> DualEvaluationResponse:
     store = get_store()
     transcript: List[ChatMessage] = []
+    metadata = payload.metadata or TranscriptMetadata()
 
     if payload.session_id:
         try:
@@ -105,12 +107,18 @@ def evaluate(payload: EvaluationRequest, _: str = Depends(get_current_token)) ->
         except KeyError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
         transcript = session.messages
+        metadata = metadata.model_copy(update={
+            "started_at": metadata.started_at or session.started_at,
+            "duration_sec": metadata.duration_sec or session.duration_seconds,
+            "word_count": metadata.word_count or session.word_count,
+            "turns": metadata.turns or len([m for m in session.messages if m.role == "user"]),
+        })
     elif payload.transcript:
         transcript = payload.transcript
     else:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Provide session_id or transcript")
 
-    evaluation = evaluate_transcript(transcript, session_id=payload.session_id)
+    evaluation = evaluate_transcript(transcript, session_id=payload.session_id, metadata=metadata)
     return evaluation
 
 
