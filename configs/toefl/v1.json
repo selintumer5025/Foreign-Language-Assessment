@@ -1,0 +1,22 @@
+{
+  "meta": { "id": "toefl", "label": "TOEFL iBT Speaking", "version": "v1", "lang": "en", "module": "speaking", "timebox_sec": 600 },
+  "prompts": {
+    "interviewer_system": "You are a TOEFL-style speaking interviewer. (DUMMY) Keep turns short; one follow-up each turn.",
+    "evaluator_system": "You are a TOEFL Speaking rater. (DUMMY) Score four criteria 0–4 using the rubric; return JSON."
+  },
+  "tasks": [
+    { "id": "warmup", "type": "open", "examples": ["(DUMMY) Introduce yourself briefly."] }
+  ],
+  "rubric": {
+    "criteria": [
+      { "id": "delivery", "label": "Delivery", "scale": { "min": 0, "max": 4 }, "description": "(DUMMY) Fluency, pace, pronunciation." },
+      { "id": "language_use", "label": "Language Use", "scale": { "min": 0, "max": 4 }, "description": "(DUMMY) Grammar & vocabulary." },
+      { "id": "topic_dev", "label": "Topic Development", "scale": { "min": 0, "max": 4 }, "description": "(DUMMY) Coherence & support." },
+      { "id": "task", "label": "Task Fulfillment", "scale": { "min": 0, "max": 4 }, "description": "(DUMMY) Relevance & completeness." }
+    ],
+    "weights": { "delivery": 0.25, "language_use": 0.35, "topic_dev": 0.25, "task": 0.15 }
+  },
+  "scoring": { "overall_scale": { "min": 0, "max": 4 }, "normalization": "weighted_average" },
+  "mapping": { "to_cefr": [{ "min": 0.0, "max": 4.0, "cefr": "(DUMMY) Map later" }] },
+  "report": { "sections": ["summary", "criteria_breakdown", "errors", "recommendations"], "max_length_tokens": 600 }
+}

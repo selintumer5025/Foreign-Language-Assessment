@@ -1,0 +1,22 @@
+{
+  "meta": { "id": "ielts", "label": "IELTS Speaking", "version": "v1", "lang": "en", "module": "speaking", "timebox_sec": 720 },
+  "prompts": {
+    "interviewer_system": "You are an IELTS-style speaking examiner. (DUMMY) Include Part 1/2/3 feel.",
+    "evaluator_system": "You are an IELTS Speaking examiner. (DUMMY) Score four criteria 0–9; return JSON."
+  },
+  "tasks": [
+    { "id": "part1", "type": "short_q", "examples": ["(DUMMY) Where do you live and why do you like it?"] }
+  ],
+  "rubric": {
+    "criteria": [
+      { "id": "fluency_coherence", "label": "Fluency & Coherence", "scale": { "min": 0, "max": 9 }, "description": "(DUMMY)" },
+      { "id": "lexical", "label": "Lexical Resource", "scale": { "min": 0, "max": 9 }, "description": "(DUMMY)" },
+      { "id": "grammar", "label": "Grammatical Range & Accuracy", "scale": { "min": 0, "max": 9 }, "description": "(DUMMY)" },
+      { "id": "pron", "label": "Pronunciation", "scale": { "min": 0, "max": 9 }, "description": "(DUMMY)" }
+    ],
+    "weights": { "fluency_coherence": 0.25, "lexical": 0.25, "grammar": 0.25, "pron": 0.25 }
+  },
+  "scoring": { "overall_scale": { "min": 0, "max": 9 }, "normalization": "weighted_average" },
+  "mapping": { "to_cefr": [{ "min": 0.0, "max": 9.0, "cefr": "(DUMMY) Map later" }] },
+  "report": { "sections": ["summary", "criteria_breakdown", "errors", "recommendations"], "max_length_tokens": 700 }
+}

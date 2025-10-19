@@ -1,0 +1,23 @@
+{
+  "meta": { "id": "cambridge_b2", "label": "Cambridge B2 First Speaking", "version": "v1", "lang": "en", "module": "speaking", "timebox_sec": 840 },
+  "prompts": {
+    "interviewer_system": "You are a Cambridge B2 interlocutor. (DUMMY) Use paired-task style prompts.",
+    "evaluator_system": "You are a Cambridge B2 assessor. (DUMMY) Score 0–5 on five criteria; return JSON."
+  },
+  "tasks": [
+    { "id": "interaction", "type": "collaborative", "examples": ["(DUMMY) Discuss options for organizing a school event."] }
+  ],
+  "rubric": {
+    "criteria": [
+      { "id": "global", "label": "Global Achievement", "scale": { "min": 0, "max": 5 }, "description": "(DUMMY)" },
+      { "id": "grammar_lexis", "label": "Grammar & Vocabulary", "scale": { "min": 0, "max": 5 }, "description": "(DUMMY)" },
+      { "id": "discourse", "label": "Discourse Management", "scale": { "min": 0, "max": 5 }, "description": "(DUMMY)" },
+      { "id": "pron", "label": "Pronunciation", "scale": { "min": 0, "max": 5 }, "description": "(DUMMY)" },
+      { "id": "interactive", "label": "Interactive Communication", "scale": { "min": 0, "max": 5 }, "description": "(DUMMY)" }
+    ],
+    "weights": { "global": 0.2, "grammar_lexis": 0.2, "discourse": 0.2, "pron": 0.2, "interactive": 0.2 }
+  },
+  "scoring": { "overall_scale": { "min": 0, "max": 5 }, "normalization": "weighted_average" },
+  "mapping": { "to_cefr": [{ "min": 0.0, "max": 5.0, "cefr": "(DUMMY) Map later" }] },
+  "report": { "sections": ["summary", "criteria_breakdown", "collaboration_feedback", "recommendations"], "max_length_tokens": 700 }
+}
