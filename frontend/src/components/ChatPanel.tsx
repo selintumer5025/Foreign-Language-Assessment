@@ -16,22 +16,15 @@ export function ChatPanel() {
   const [evaluation, setEvaluation] = useState<EvaluationResponse | null>(null);
   const [sessionSummary, setSessionSummary] = useState<SessionFinishResponse | null>(null);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
-  const [preferredMode, setPreferredMode] = useState<InteractionMode>("text");
   const lastSpokenIdRef = useRef<string | null>(null);
 
   const canChat = Boolean(session?.session_id) && !evaluation;
-  const activeMode = session?.mode ?? preferredMode;
-
-  useEffect(() => {
-    if (session?.mode) {
-      setPreferredMode(session.mode);
-    }
-  }, [session?.mode]);
+  const activeMode: InteractionMode = session?.mode ?? "voice";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!("speechSynthesis" in window)) return;
-    if (session?.mode !== "voice") {
+    if (!session || session.mode !== "voice") {
       window.speechSynthesis.cancel();
     }
   }, [session?.mode]);
@@ -57,7 +50,7 @@ export function ChatPanel() {
     setEvaluation(null);
     setSessionSummary(null);
     setReportUrl(null);
-    await startSession.mutateAsync({ mode: preferredMode, duration_minutes: 10 });
+    await startSession.mutateAsync({ mode: "voice", duration_minutes: 10 });
   };
 
   const handleSend = async (message: string) => {
@@ -106,18 +99,6 @@ export function ChatPanel() {
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-3xl font-semibold text-slate-900">English Interview Coach</h1>
           <div className="flex items-center gap-3">
-            <label className="text-sm font-semibold text-slate-700" htmlFor="mode-select">
-              Mode
-            </label>
-            <select
-              id="mode-select"
-              value={preferredMode}
-              onChange={(event) => setPreferredMode(event.target.value as InteractionMode)}
-              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring"
-            >
-              <option value="text">Text</option>
-              <option value="voice">Voice</option>
-            </select>
             <button
               onClick={handleStart}
               className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700"
@@ -129,7 +110,7 @@ export function ChatPanel() {
         <div className="h-[480px] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-inner">
           {transcript.length === 0 ? (
             <p className="text-center text-sm text-slate-500">
-              Start a session to begin the conversation. Choose voice mode to hear prompts aloud and respond hands-free.
+              Start a session to begin the conversation. Prompts will be read aloud, and you can answer by speaking.
             </p>
           ) : (
             <div className="space-y-3">
