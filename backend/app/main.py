@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from pathlib import Path
 from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, status
@@ -49,6 +50,16 @@ app.add_middleware(
 )
 
 app.mount("/reports", StaticFiles(directory=REPORTS_DIR, html=True), name="generated_reports")
+
+
+def _resolve_frontend_dist() -> Path | None:
+    """Return the path to the built frontend assets if they exist."""
+
+    root_dir = Path(__file__).resolve().parent.parent.parent
+    dist_dir = root_dir / "frontend" / "dist"
+    return dist_dir if dist_dir.exists() else None
+
+
 
 
 @app.get("/health", tags=["health"])
@@ -211,3 +222,8 @@ def configure_gpt5(payload: GPT5KeyRequest, _: str = Depends(get_current_token))
 def startup_event() -> None:
     # Preload settings to ensure env validation occurs early
     _ = settings
+
+
+_frontend_dist = _resolve_frontend_dist()
+if _frontend_dist:
+    app.mount("/", StaticFiles(directory=_frontend_dist, html=True), name="frontend")
