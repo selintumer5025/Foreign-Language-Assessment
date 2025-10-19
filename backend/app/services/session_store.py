@@ -9,11 +9,12 @@ from ..models import ChatMessage, InteractionMode
 
 
 class SessionData:
-    def __init__(self, mode: InteractionMode, duration_minutes: int, user_name: str | None = None):
+    def __init__(self, mode: InteractionMode, duration_minutes: int, user_name: str | None = None, user_email: str | None = None):
         self.session_id = str(uuid.uuid4())
         self.mode = mode
         self.duration_minutes = duration_minutes
         self.user_name = user_name
+        self.user_email = user_email
         self.started_at = datetime.utcnow()
         self.messages: List[ChatMessage] = []
 
@@ -34,8 +35,8 @@ class InMemorySessionStore:
         self._sessions: Dict[str, SessionData] = {}
         self._turn_counts: Dict[str, int] = defaultdict(int)
 
-    def create_session(self, mode: InteractionMode, duration_minutes: int, user_name: str | None = None) -> SessionData:
-        session = SessionData(mode=mode, duration_minutes=duration_minutes, user_name=user_name)
+    def create_session(self, mode: InteractionMode, duration_minutes: int, user_name: str | None = None, user_email: str | None = None) -> SessionData:
+        session = SessionData(mode=mode, duration_minutes=duration_minutes, user_name=user_name, user_email=user_email)
         self._sessions[session.session_id] = session
         return session
 
