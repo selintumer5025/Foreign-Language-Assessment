@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+.venv/
+.env
+
+# Node
+node_modules/
+frontend/node_modules/
+*.log
+frontend/.env
+
+# Reports
+backend/generated_reports/
