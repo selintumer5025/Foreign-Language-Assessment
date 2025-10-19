@@ -21,21 +21,52 @@ export interface SessionFinishResponse {
   duration_seconds: number;
 }
 
-export interface EvaluationDimensionScore {
-  name: string;
+export interface CriterionAssessment {
   score: number;
-  weight: number;
-  feedback: string;
+  comment: string;
 }
 
-export interface EvaluationResponse {
-  session_id?: string;
-  overall_score: number;
+export interface CommonError {
+  issue: string;
+  fix: string;
+}
+
+export interface StandardEvaluation {
+  standard_id: "toefl" | "ielts";
+  label: string;
+  overall?: number | null;
+  cefr?: string | null;
+  criteria: Record<string, CriterionAssessment>;
+  criterion_labels: Record<string, string>;
+  common_errors: CommonError[];
+  recommendations: string[];
+  evidence_quotes: string[];
+  status: "ok" | "failed";
+  error?: string | null;
+}
+
+export interface CrosswalkSummary {
+  consensus_cefr: string;
+  notes: string;
+  strengths: string[];
+  focus: string[];
+}
+
+export interface SessionInfo {
+  id: string;
+  started_at: string;
+  ended_at: string;
+  duration_sec: number;
+  turns: number;
+}
+
+export interface DualEvaluationResponse {
+  session: SessionInfo;
+  standards: StandardEvaluation[];
+  crosswalk: CrosswalkSummary;
+  warnings?: string[] | null;
+  session_id: string;
   cefr_level: string;
-  summary: string;
-  dimensions: EvaluationDimensionScore[];
-  errors: string[];
-  action_plan: string[];
   generated_at: string;
 }
 

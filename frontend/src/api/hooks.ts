@@ -4,7 +4,7 @@ import { api } from "./client";
 import type {
   ChatMessage,
   ChatResponse,
-  EvaluationResponse,
+  DualEvaluationResponse,
   ReportResponse,
   SessionFinishResponse,
   SessionStartResponse,
@@ -90,7 +90,7 @@ export function useFinishSession() {
 export function useEvaluateSession() {
   return useMutation({
     mutationFn: async (payload: { session_id: string }) => {
-      const { data } = await api.post<EvaluationResponse>("/api/evaluate", payload);
+      const { data } = await api.post<DualEvaluationResponse>("/api/evaluate", payload);
       return data;
     }
   });
@@ -98,7 +98,7 @@ export function useEvaluateSession() {
 
 export function useGenerateReport() {
   return useMutation({
-    mutationFn: async (payload: { evaluation: EvaluationResponse; session_metadata?: Record<string, unknown> }) => {
+    mutationFn: async (payload: { evaluation: DualEvaluationResponse; session_metadata?: Record<string, unknown> }) => {
       const { data } = await api.post<ReportResponse>("/api/report", payload);
       return data;
     }

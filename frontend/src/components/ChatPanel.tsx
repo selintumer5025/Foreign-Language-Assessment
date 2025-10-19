@@ -3,7 +3,7 @@ import { useChat, useCurrentSession, useFinishSession, useGenerateReport, useSta
 import { ChatInput } from "./ChatInput";
 import { MessageBubble } from "./MessageBubble";
 import { ScoreCard } from "./ScoreCard";
-import type { EvaluationResponse, InteractionMode, SessionFinishResponse } from "../types";
+import type { DualEvaluationResponse, InteractionMode, SessionFinishResponse } from "../types";
 
 export function ChatPanel() {
   const { data: transcript } = useTranscript();
@@ -13,7 +13,7 @@ export function ChatPanel() {
   const finishSession = useFinishSession();
   const evaluateSession = useEvaluateSession();
   const generateReport = useGenerateReport();
-  const [evaluation, setEvaluation] = useState<EvaluationResponse | null>(null);
+  const [evaluation, setEvaluation] = useState<DualEvaluationResponse | null>(null);
   const [sessionSummary, setSessionSummary] = useState<SessionFinishResponse | null>(null);
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const lastSpokenIdRef = useRef<string | null>(null);
@@ -73,7 +73,7 @@ export function ChatPanel() {
   const handleReport = async () => {
     if (!evaluation || !sessionSummary) return;
     const metadata = {
-      session_id: evaluation.session_id,
+      session_id: evaluation.session.id,
       started_at: session?.started_at,
       duration_seconds: sessionSummary.duration_seconds,
       word_count: sessionSummary.word_count,
