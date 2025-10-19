@@ -18,10 +18,19 @@ class GPT5APIError(RuntimeError):
 class GPT5Client:
     """Lightweight HTTP client to call a GPT-5 compatible chat completion API."""
 
-    def __init__(self, api_key: str, base_url: str, model: str, timeout: float = 30.0) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str,
+        model: str,
+        *,
+        temperature: float | None = None,
+        timeout: float = 30.0,
+    ) -> None:
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
         self._model = model
+        self._temperature = temperature
         self._timeout = timeout
 
     def generate_evaluation(
@@ -53,9 +62,11 @@ class GPT5Client:
         request_payload = {
             "model": self._model,
             "messages": messages_payload,
-            "temperature": 0.2,
             "response_format": {"type": "json_object"},
         }
+
+        if self._temperature is not None:
+            request_payload["temperature"] = self._temperature
 
         url = f"{self._base_url}/chat/completions"
         headers = {
@@ -182,6 +193,7 @@ def get_gpt5_client() -> GPT5Client:
         api_key=settings.gpt5_api_key,
         base_url=settings.gpt5_api_base_url,
         model=settings.gpt5_model,
+        temperature=settings.gpt5_temperature,
     )
 
 

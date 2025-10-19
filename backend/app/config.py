@@ -97,6 +97,10 @@ class AppSettings(BaseModel):
     gpt5_api_key: str | None = Field(default=None, description="API key for GPT-5 evaluation")
     gpt5_api_base_url: str = Field(default="https://api.openai.com/v1", description="Base URL for GPT-5 compatible APIs")
     gpt5_model: str = Field(default="gpt-5", description="Model identifier to request for GPT-5 evaluations")
+    gpt5_temperature: float | None = Field(
+        default=None,
+        description="Optional sampling temperature for GPT-5 evaluations; omit to use API default.",
+    )
 
     @staticmethod
     def from_env() -> "AppSettings":
@@ -118,7 +122,19 @@ class AppSettings(BaseModel):
             gpt5_api_key=os.getenv("GPT5_API_KEY"),
             gpt5_api_base_url=os.getenv("GPT5_API_BASE_URL", "https://api.openai.com/v1"),
             gpt5_model=os.getenv("GPT5_MODEL", "gpt-5"),
+            gpt5_temperature=_load_temperature(),
         )
+
+
+def _load_temperature() -> float | None:
+    raw = os.getenv("GPT5_TEMPERATURE")
+    if raw is None or raw.strip() == "":
+        return None
+
+    try:
+        return float(raw)
+    except ValueError as exc:  # pragma: no cover - config error surfaced during startup
+        raise ValueError("GPT5_TEMPERATURE must be a numeric value") from exc
 
 
 @lru_cache(maxsize=1)
