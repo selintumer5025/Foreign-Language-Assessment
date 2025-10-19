@@ -2,10 +2,13 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   useChat,
   useConfigureGpt5,
+  useConfigureEmail,
   useCurrentSession,
   useEvaluateSession,
   useFinishSession,
   useGenerateReport,
+  useEmailStatus,
+  useSendEmail,
   useGpt5Status,
   useStartSession,
   useTranscript,
@@ -13,7 +16,14 @@ import {
 import { ChatInput } from "./ChatInput";
 import { MessageBubble } from "./MessageBubble";
 import { ScoreCard } from "./ScoreCard";
-import type { DualEvaluationResponse, InteractionMode, SessionFinishResponse } from "../types";
+import type {
+  DualEvaluationResponse,
+  EmailConfigUpdatePayload,
+  InteractionMode,
+  SessionFinishResponse
+} from "../types";
+
+const REPORT_RECIPIENT = "selintumer@gmail.com";
 
 export function ChatPanel() {
   const { data: transcript } = useTranscript();
@@ -23,6 +33,9 @@ export function ChatPanel() {
   const finishSession = useFinishSession();
   const evaluateSession = useEvaluateSession();
   const generateReport = useGenerateReport();
+  const emailStatusQuery = useEmailStatus();
+  const configureEmail = useConfigureEmail();
+  const sendEmail = useSendEmail();
   const gpt5StatusQuery = useGpt5Status();
   const configureGpt5 = useConfigureGpt5();
   const [evaluation, setEvaluation] = useState<DualEvaluationResponse | null>(null);
@@ -30,6 +43,30 @@ export function ChatPanel() {
   const [reportUrl, setReportUrl] = useState<string | null>(null);
   const lastSpokenIdRef = useRef<string | null>(null);
   const [apiKeyInput, setApiKeyInput] = useState("");
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailForm, setEmailForm] = useState({
+    provider: "smtp",
+    smtp_host: "",
+    smtp_port: "587",
+    smtp_username: "",
+    smtp_password: "",
+    default_sender: ""
+  });
+  const [emailConfigDismissed, setEmailConfigDismissed] = useState(false);
+  const [emailBannerMessage, setEmailBannerMessage] = useState<string | null>(null);
+  const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error" | "warning"; message: string } | null>(null);
+  const emailFeedbackClass = useMemo(() => {
+    if (!emailFeedback) return "";
+    switch (emailFeedback.type) {
+      case "success":
+        return "border-emerald-400/40 bg-emerald-500/10 text-emerald-100";
+      case "error":
+        return "border-rose-400/40 bg-rose-500/10 text-rose-100";
+      case "warning":
+      default:
+        return "border-amber-400/40 bg-amber-500/10 text-amber-100";
+    }
+  }, [emailFeedback]);
 
   const gptConfigured = gpt5StatusQuery.data?.configured ?? false;
   const requireApiKey = gpt5StatusQuery.isSuccess && !gptConfigured;
@@ -68,11 +105,42 @@ export function ChatPanel() {
     window.speechSynthesis.speak(utterance);
   }, [session?.mode, transcript]);
 
+  useEffect(() => {
+    if (!emailStatusQuery.isSuccess) return;
+
+    const status = emailStatusQuery.data;
+    setEmailForm((prev) => {
+      const fallbackPort = Number(prev.smtp_port) || 587;
+      return {
+        ...prev,
+        provider: status.settings.provider ?? "smtp",
+        smtp_host: status.settings.smtp_host ?? "",
+        smtp_port: String(status.settings.smtp_port ?? fallbackPort),
+        smtp_username: status.settings.smtp_username ?? "",
+        default_sender: status.settings.default_sender ?? "",
+      };
+    });
+
+    if (!status.configured && !emailConfigDismissed) {
+      setEmailModalOpen(true);
+    } else if (status.configured) {
+      setEmailModalOpen(false);
+      setEmailBannerMessage(null);
+    }
+  }, [emailStatusQuery.isSuccess, emailStatusQuery.data, emailConfigDismissed]);
+
+  useEffect(() => {
+    if (emailStatusQuery.isError) {
+      setEmailBannerMessage("E-posta yapılandırma bilgileri alınamadı. Lütfen ağı kontrol edin.");
+    }
+  }, [emailStatusQuery.isError]);
+
   const handleStart = async () => {
     if (blockingForConfig) return;
     setEvaluation(null);
     setSessionSummary(null);
     setReportUrl(null);
+    setEmailFeedback(null);
     await startSession.mutateAsync({ mode: "voice", duration_minutes: 10 });
   };
 
@@ -104,6 +172,43 @@ export function ChatPanel() {
     };
     const report = await generateReport.mutateAsync({ evaluation, session_metadata: metadata });
     setReportUrl(report.report_url);
+    setEmailFeedback(null);
+
+    if (emailStatusQuery.data?.configured) {
+      const subject = `Dil Değerlendirme Raporu - ${evaluation.session.id}`;
+      const body = [
+        "Merhaba,",
+        "",
+        "Yeni oluşturulan dil değerlendirme raporuna aşağıdaki bağlantıdan ulaşabilirsiniz:",
+        report.report_url,
+        "",
+        "Bu mesaj sistem tarafından otomatik gönderilmiştir.",
+      ].join("\n");
+
+      try {
+        await sendEmail.mutateAsync({
+          to: REPORT_RECIPIENT,
+          subject,
+          body,
+          links: [report.report_url],
+        });
+        setEmailFeedback({
+          type: "success",
+          message: `Rapor ${REPORT_RECIPIENT} adresine e-posta ile gönderildi.`,
+        });
+      } catch (error) {
+        console.error("Failed to send report email", error);
+        setEmailFeedback({
+          type: "error",
+          message: "Rapor e-posta ile gönderilemedi. Lütfen e-posta ayarlarını kontrol edin.",
+        });
+      }
+    } else {
+      setEmailFeedback({
+        type: "warning",
+        message: `E-posta ayarları eksik olduğu için rapor ${REPORT_RECIPIENT} adresine gönderilemedi.`,
+      });
+    }
   };
 
   const isLoading = useMemo(
@@ -138,6 +243,45 @@ export function ChatPanel() {
     } catch (error) {
       console.error("Failed to configure GPT-5", error);
     }
+  };
+
+  const handleEmailInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setEmailForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSaveEmailSettings = async () => {
+    const payload: EmailConfigUpdatePayload = { provider: emailForm.provider };
+    if (emailForm.smtp_host.trim()) payload.smtp_host = emailForm.smtp_host.trim();
+    if (emailForm.smtp_username.trim()) payload.smtp_username = emailForm.smtp_username.trim();
+    if (emailForm.smtp_password.trim()) payload.smtp_password = emailForm.smtp_password.trim();
+    if (emailForm.default_sender.trim()) payload.default_sender = emailForm.default_sender.trim();
+    const parsedPort = Number(emailForm.smtp_port);
+    if (!Number.isNaN(parsedPort) && parsedPort > 0) {
+      payload.smtp_port = parsedPort;
+    }
+
+    try {
+      await configureEmail.mutateAsync(payload);
+      setEmailModalOpen(false);
+      setEmailConfigDismissed(false);
+      setEmailBannerMessage(null);
+      setEmailFeedback({ type: "success", message: "E-posta ayarları kaydedildi." });
+      setEmailForm((prev) => ({ ...prev, smtp_password: "" }));
+      await emailStatusQuery.refetch();
+    } catch (error) {
+      console.error("Failed to configure email", error);
+      setEmailFeedback({ type: "error", message: "E-posta ayarları kaydedilemedi." });
+    }
+  };
+
+  const handleSkipEmailConfig = () => {
+    setEmailModalOpen(false);
+    setEmailConfigDismissed(true);
+    setEmailBannerMessage("E-posta ayarları tamamlanmadığı için raporlar otomatik gönderilmeyecek.");
   };
 
   return (
@@ -187,6 +331,115 @@ export function ChatPanel() {
           </div>
         </div>
       )}
+      {emailModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+          <div className="w-full max-w-2xl rounded-3xl border border-amber-500/50 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
+            <h2 className="text-2xl font-bold">E-posta Ayarlarını Tamamlayın</h2>
+            <p className="mt-2 text-sm text-slate-300">
+              Raporlarınızın otomatik olarak gönderilmesi için SMTP bilgilerini girin. Bu adımı şimdi atlayabilirsiniz ancak e-posta gönderimi çalışmayacaktır.
+            </p>
+            {emailStatusQuery.data?.missing_fields?.length ? (
+              <p className="mt-3 text-xs text-amber-300">
+                Eksik alanlar: {emailStatusQuery.data.missing_fields.join(", ")}
+              </p>
+            ) : null}
+            <div className="mt-6 grid gap-4">
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-300" htmlFor="smtp_host">SMTP Sunucusu</label>
+                <input
+                  id="smtp_host"
+                  name="smtp_host"
+                  type="text"
+                  value={emailForm.smtp_host}
+                  onChange={handleEmailInputChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  placeholder="smtp.mailprovider.com"
+                  disabled={configureEmail.isPending}
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
+                <div className="grid gap-2">
+                  <label className="text-sm font-semibold text-slate-300" htmlFor="smtp_port">Port</label>
+                  <input
+                    id="smtp_port"
+                    name="smtp_port"
+                    type="number"
+                    min={1}
+                    value={emailForm.smtp_port}
+                    onChange={handleEmailInputChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                    placeholder="587"
+                    disabled={configureEmail.isPending}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label className="text-sm font-semibold text-slate-300" htmlFor="smtp_username">Kullanıcı Adı</label>
+                  <input
+                    id="smtp_username"
+                    name="smtp_username"
+                    type="text"
+                    value={emailForm.smtp_username}
+                    onChange={handleEmailInputChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                    placeholder="user@example.com"
+                    disabled={configureEmail.isPending}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-300" htmlFor="smtp_password">Şifre</label>
+                <input
+                  id="smtp_password"
+                  name="smtp_password"
+                  type="password"
+                  value={emailForm.smtp_password}
+                  onChange={handleEmailInputChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  placeholder="••••••••"
+                  disabled={configureEmail.isPending}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-300" htmlFor="default_sender">Varsayılan Gönderen</label>
+                <input
+                  id="default_sender"
+                  name="default_sender"
+                  type="email"
+                  value={emailForm.default_sender}
+                  onChange={handleEmailInputChange}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  placeholder="noreply@example.com"
+                  disabled={configureEmail.isPending}
+                />
+              </div>
+            </div>
+            {configureEmail.isError && (
+              <p className="mt-4 text-sm text-rose-400">Ayarlar kaydedilirken bir sorun oluştu. Lütfen tekrar deneyin.</p>
+            )}
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+              <span>Bu adımı atlayabilirsiniz ancak e-posta fonksiyonu devre dışı kalır.</span>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleSkipEmailConfig}
+                  className="rounded-xl border border-slate-600 px-4 py-2 font-semibold text-slate-200 transition-all duration-300 hover:border-amber-400 hover:text-amber-200"
+                >
+                  Daha Sonra
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEmailSettings}
+                  disabled={configureEmail.isPending}
+                  className="relative overflow-hidden rounded-xl px-6 py-2 font-semibold text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 transition-transform duration-300" style={{ opacity: configureEmail.isPending ? 0.7 : 1 }}></span>
+                  <span className="relative">Kaydet</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Animated Background - Dark Theme */}
       <div className="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 -z-10"></div>
       <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
@@ -196,6 +449,18 @@ export function ChatPanel() {
       </div>
 
       <div className="relative flex flex-col gap-12">
+        {emailBannerMessage && (
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 shadow-lg">
+            <span>{emailBannerMessage}</span>
+            <button
+              type="button"
+              onClick={() => setEmailBannerMessage(null)}
+              className="rounded-full border border-amber-300/40 px-3 py-1 text-xs font-semibold text-amber-100 transition-all duration-300 hover:border-amber-200 hover:text-amber-50"
+            >
+              Kapat
+            </button>
+          </div>
+        )}
         {/* Main Chat Area */}
         <div className="space-y-6">
           {/* Header Section */}
@@ -340,6 +605,11 @@ export function ChatPanel() {
               </svg>
               View Generated Report
             </a>
+          )}
+          {emailFeedback && (
+            <div className={`rounded-2xl border px-4 py-3 text-sm shadow-lg ${emailFeedbackClass}`}>
+              {emailFeedback.message}
+            </div>
           )}
         </div>
 

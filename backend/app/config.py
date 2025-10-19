@@ -65,6 +65,27 @@ class EmailSettings(BaseModel):
     sendgrid_api_key: str | None = Field(default=None, description="SendGrid API key")
     default_sender: EmailStr | None = None
 
+    def missing_fields(self) -> list[str]:
+        if self.provider.lower() != "smtp":
+            return []
+
+        missing: list[str] = []
+        if not self.smtp_host:
+            missing.append("smtp_host")
+        if not self.smtp_username:
+            missing.append("smtp_username")
+        if not self.smtp_password:
+            missing.append("smtp_password")
+        if not self.default_sender:
+            missing.append("default_sender")
+        if not self.smtp_port:
+            missing.append("smtp_port")
+        return missing
+
+    @property
+    def is_configured(self) -> bool:
+        return len(self.missing_fields()) == 0
+
 
 class AppSettings(BaseModel):
     target_email: EmailStr | None = Field(default=None, description="Default report recipient")
@@ -109,4 +130,29 @@ def set_gpt5_api_key(api_key: str) -> AppSettings:
     os.environ["GPT5_API_KEY"] = api_key
     _persist_env_var("GPT5_API_KEY", api_key)
     get_settings.cache_clear()
+    return get_settings()
+
+
+def set_email_settings(**kwargs: str | int | None) -> AppSettings:
+    env_mapping = {
+        "provider": "EMAIL_PROVIDER",
+        "smtp_host": "SMTP_HOST",
+        "smtp_port": "SMTP_PORT",
+        "smtp_username": "SMTP_USERNAME",
+        "smtp_password": "SMTP_PASSWORD",
+        "default_sender": "EMAIL_DEFAULT_SENDER",
+    }
+
+    updated = False
+    for key, value in kwargs.items():
+        if key not in env_mapping or value in (None, ""):
+            continue
+        env_key = env_mapping[key]
+        os.environ[env_key] = str(value)
+        _persist_env_var(env_key, str(value))
+        updated = True
+
+    if updated:
+        get_settings.cache_clear()
+
     return get_settings()

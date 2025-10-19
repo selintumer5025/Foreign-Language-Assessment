@@ -7,7 +7,7 @@ from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
 from .auth import get_current_token
-from .config import get_settings, set_gpt5_api_key
+from .config import get_settings, set_gpt5_api_key, set_email_settings
 from .models import (
     ChatMessage,
     ChatRequest,
@@ -17,6 +17,9 @@ from .models import (
     GPT5KeyStatus,
     EmailRequest,
     EmailResponse,
+    EmailConfigStatus,
+    EmailConfigUpdateRequest,
+    EmailSettingsPublic,
     EvaluationRequest,
     ReportRequest,
     ReportResponse,
@@ -134,6 +137,39 @@ def generate_report(payload: ReportRequest, _: str = Depends(get_current_token))
 @app.post("/api/email", response_model=EmailResponse, tags=["email"])
 def send_report_email(payload: EmailRequest, _: str = Depends(get_current_token)) -> EmailResponse:
     return send_email(payload)
+
+
+@app.get("/api/config/email", response_model=EmailConfigStatus, tags=["config"])
+def email_status(_: str = Depends(get_current_token)) -> EmailConfigStatus:
+    settings_snapshot = get_settings()
+    missing = settings_snapshot.email.missing_fields()
+    public_settings = EmailSettingsPublic(
+        provider=settings_snapshot.email.provider,
+        smtp_host=settings_snapshot.email.smtp_host,
+        smtp_port=settings_snapshot.email.smtp_port,
+        smtp_username=settings_snapshot.email.smtp_username,
+        default_sender=settings_snapshot.email.default_sender,
+    )
+    return EmailConfigStatus(configured=settings_snapshot.email.is_configured, missing_fields=missing, settings=public_settings)
+
+
+@app.post("/api/config/email", response_model=EmailConfigStatus, tags=["config"])
+def configure_email(payload: EmailConfigUpdateRequest, _: str = Depends(get_current_token)) -> EmailConfigStatus:
+    payload_data = payload.model_dump(exclude_unset=True)
+    if not payload_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No email settings provided")
+
+    set_email_settings(**payload_data)
+    settings_snapshot = get_settings()
+    missing = settings_snapshot.email.missing_fields()
+    public_settings = EmailSettingsPublic(
+        provider=settings_snapshot.email.provider,
+        smtp_host=settings_snapshot.email.smtp_host,
+        smtp_port=settings_snapshot.email.smtp_port,
+        smtp_username=settings_snapshot.email.smtp_username,
+        default_sender=settings_snapshot.email.default_sender,
+    )
+    return EmailConfigStatus(configured=settings_snapshot.email.is_configured, missing_fields=missing, settings=public_settings)
 
 
 @app.get("/api/config/gpt5", response_model=GPT5KeyStatus, tags=["config"])

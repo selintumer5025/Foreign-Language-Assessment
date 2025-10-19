@@ -86,3 +86,39 @@ export interface ChatMessage {
 export interface Gpt5Status {
   configured: boolean;
 }
+
+export interface EmailSettingsInfo {
+  provider: string;
+  smtp_host: string | null;
+  smtp_port: number;
+  smtp_username: string | null;
+  default_sender: string | null;
+}
+
+export interface EmailConfigStatus {
+  configured: boolean;
+  missing_fields: string[];
+  settings: EmailSettingsInfo;
+}
+
+export interface EmailRequestPayload {
+  to: string;
+  subject: string;
+  body: string;
+  attachments?: Array<Record<string, unknown>>;
+  links?: string[];
+}
+
+export interface EmailConfigUpdatePayload {
+  provider?: string;
+  smtp_host?: string;
+  smtp_port?: number;
+  smtp_username?: string;
+  smtp_password?: string;
+  default_sender?: string;
+}
+
+export interface EmailResponsePayload {
+  status: string;
+  message_id: string;
+}
