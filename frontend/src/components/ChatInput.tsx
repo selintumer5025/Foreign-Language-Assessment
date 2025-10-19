@@ -110,15 +110,15 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
           type="button"
           onClick={handleToggleRecording}
           disabled={disabled || !speechSupported}
-          className={`h-20 rounded-lg px-4 text-sm font-semibold text-white shadow focus:outline-none focus:ring disabled:cursor-not-allowed ${
-            isRecording ? "bg-red-600 hover:bg-red-700" : "bg-amber-500 hover:bg-amber-600 disabled:bg-slate-400"
+          className={`h-20 rounded-lg px-4 text-sm font-semibold text-white shadow transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700 ${
+            isRecording ? "bg-blue-800 hover:bg-blue-900" : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
           {isRecording ? "Stop Recording" : "Start Recording"}
         </button>
       </div>
       {!speechSupported && (
-        <p className="mt-2 text-xs text-slate-500">
+        <p className="mt-2 text-xs text-blue-600">
           Voice capture is not supported in this browser. Please switch to a supported browser to continue.
         </p>
       )}
@@ -132,14 +132,14 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
           onChange={handleChange}
           disabled={disabled}
           placeholder={speechSupported ? "Speak or type your answer here" : "Type your answer here"}
-          className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-900 shadow focus:outline-none focus:ring disabled:cursor-not-allowed disabled:bg-slate-100"
+          className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm text-slate-900 shadow focus-visible:outline-none focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-blue-50"
           rows={4}
         />
         <div className="flex justify-end">
           <button
             type="submit"
             disabled={disabled || message.trim().length === 0}
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700"
           >
             {mode === "voice" ? "Send" : "Next Question"}
           </button>
