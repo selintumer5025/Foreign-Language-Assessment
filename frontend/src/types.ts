@@ -1,4 +1,4 @@
-export type InteractionMode = "text" | "voice";
+export type InteractionMode = "voice";
 
 export interface SessionStartResponse {
   session_id: string;
