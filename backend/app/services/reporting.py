@@ -245,5 +245,6 @@ def persist_report(evaluation: DualEvaluationResponse, session_metadata: Optiona
     filename = f"report_{evaluation.session.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.html"
     filepath = REPORTS_DIR / filename
     filepath.write_text(report_html, encoding="utf-8")
-    report_url = f"{get_settings().app_base_url}/reports/{filename}"
+    base_url = get_settings().app_base_url.rstrip("/")
+    report_url = f"{base_url}/reports/{filename}"
     return report_html, report_url
