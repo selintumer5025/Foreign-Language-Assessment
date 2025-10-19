@@ -150,7 +150,12 @@ def email_status(_: str = Depends(get_current_token)) -> EmailConfigStatus:
         smtp_username=settings_snapshot.email.smtp_username,
         default_sender=settings_snapshot.email.default_sender,
     )
-    return EmailConfigStatus(configured=settings_snapshot.email.is_configured, missing_fields=missing, settings=public_settings)
+    return EmailConfigStatus(
+        configured=settings_snapshot.email.is_configured,
+        missing_fields=missing,
+        settings=public_settings,
+        target_email=settings_snapshot.target_email,
+    )
 
 
 @app.post("/api/config/email", response_model=EmailConfigStatus, tags=["config"])
@@ -169,7 +174,12 @@ def configure_email(payload: EmailConfigUpdateRequest, _: str = Depends(get_curr
         smtp_username=settings_snapshot.email.smtp_username,
         default_sender=settings_snapshot.email.default_sender,
     )
-    return EmailConfigStatus(configured=settings_snapshot.email.is_configured, missing_fields=missing, settings=public_settings)
+    return EmailConfigStatus(
+        configured=settings_snapshot.email.is_configured,
+        missing_fields=missing,
+        settings=public_settings,
+        target_email=settings_snapshot.target_email,
+    )
 
 
 @app.get("/api/config/gpt5", response_model=GPT5KeyStatus, tags=["config"])

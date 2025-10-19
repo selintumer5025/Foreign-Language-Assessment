@@ -25,7 +25,7 @@ class GPT5Client:
         model: str,
         *,
         temperature: float | None = None,
-        timeout: float = 30.0,
+        timeout: float = 300.0,
     ) -> None:
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")

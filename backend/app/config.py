@@ -157,6 +157,7 @@ def set_email_settings(**kwargs: str | int | None) -> AppSettings:
         "smtp_username": "SMTP_USERNAME",
         "smtp_password": "SMTP_PASSWORD",
         "default_sender": "EMAIL_DEFAULT_SENDER",
+        "target_email": "TARGET_EMAIL",
     }
 
     updated = False
