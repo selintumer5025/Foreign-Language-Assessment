@@ -9,10 +9,10 @@ const queryClient = new QueryClient();
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-slate-100">
+      <div className="min-h-screen bg-slate-950 text-slate-100">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-10">
           <ChatPanel />
-          <footer className="text-center text-xs text-slate-500">
+          <footer className="text-center text-xs text-slate-400">
             English Interview Coach · Built for TOEFL-style speaking practice · Interface and prompts in English only
           </footer>
         </div>
