@@ -1,22 +1,181 @@
 {
-  "meta": { "id": "ielts", "label": "IELTS Speaking", "version": "v1", "lang": "en", "module": "speaking", "timebox_sec": 720 },
+  "meta": {
+    "id": "ielts",
+    "label": "IELTS Speaking",
+    "version": "v1",
+    "lang": "en",
+    "module": "speaking",
+    "timebox_sec": 720
+  },
   "prompts": {
-    "interviewer_system": "You are an IELTS-style speaking examiner. (DUMMY) Include Part 1/2/3 feel.",
-    "evaluator_system": "You are an IELTS Speaking examiner. (DUMMY) Score four criteria 0–9; return JSON."
+    "interviewer_system": "You are an IELTS-style speaking examiner. Simulate Part 1 (short personal topics), Part 2 (long turn with a cue card), and Part 3 (abstract discussion). Keep questions natural and concise; ask exactly one follow-up per turn; do not correct during the interview.",
+    "evaluator_system": "You are an IELTS Speaking examiner. Rate four criteria on the 0–9 band scale (allow .0 or .5). Use professional, succinct justification (1–2 sentences per criterion). Compute the average (equal weights) as the overall band, then estimate CEFR using `mapping.to_cefr`. Provide top 3–5 recurring issues with one-line fixes and 5 targeted recommendations. Return a single JSON following `evaluator_output_schema`."
   },
   "tasks": [
-    { "id": "part1", "type": "short_q", "examples": ["(DUMMY) Where do you live and why do you like it?"] }
+    {
+      "id": "part1",
+      "type": "short_q",
+      "instructions": "Familiar topics; brief answers.",
+      "examples": [
+        "Where do you live and what do you like about it?",
+        "Do you prefer mornings or evenings? Why?"
+      ]
+    },
+    {
+      "id": "part2",
+      "type": "long_turn",
+      "instructions": "Cue-card style: 1–2 minutes; include details and a brief conclusion.",
+      "examples": [
+        "Describe a memorable trip. You should say where you went, who you were with, what you did, and explain why it was memorable."
+      ]
+    },
+    {
+      "id": "part3",
+      "type": "discussion",
+      "instructions": "Abstract follow-up; extend and justify opinions; compare/contrast.",
+      "examples": [
+        "How has tourism changed in recent years in your country?",
+        "What are the pros and cons of studying abroad?"
+      ]
+    }
   ],
   "rubric": {
     "criteria": [
-      { "id": "fluency_coherence", "label": "Fluency & Coherence", "scale": { "min": 0, "max": 9 }, "description": "(DUMMY)" },
-      { "id": "lexical", "label": "Lexical Resource", "scale": { "min": 0, "max": 9 }, "description": "(DUMMY)" },
-      { "id": "grammar", "label": "Grammatical Range & Accuracy", "scale": { "min": 0, "max": 9 }, "description": "(DUMMY)" },
-      { "id": "pron", "label": "Pronunciation", "scale": { "min": 0, "max": 9 }, "description": "(DUMMY)" }
+      {
+        "id": "fluency_coherence",
+        "label": "Fluency & Coherence",
+        "scale": { "min": 0, "max": 9 },
+        "description": "Flow, logical organization, natural pausing; ability to extend answers with linking."
+      },
+      {
+        "id": "lexical",
+        "label": "Lexical Resource",
+        "scale": { "min": 0, "max": 9 },
+        "description": "Range and precision of vocabulary; collocations; ability to paraphrase."
+      },
+      {
+        "id": "grammar",
+        "label": "Grammatical Range & Accuracy",
+        "scale": { "min": 0, "max": 9 },
+        "description": "Variety (simple/complex forms) and control; error density and impact on clarity."
+      },
+      {
+        "id": "pron",
+        "label": "Pronunciation",
+        "scale": { "min": 0, "max": 9 },
+        "description": "Intelligibility; word/sentence stress; rhythm; intonation patterns."
+      }
     ],
-    "weights": { "fluency_coherence": 0.25, "lexical": 0.25, "grammar": 0.25, "pron": 0.25 }
+    "weights": {
+      "fluency_coherence": 0.25,
+      "lexical": 0.25,
+      "grammar": 0.25,
+      "pron": 0.25
+    },
+    "band_hints": {
+      "9": "Fully natural delivery, precise lexis/grammar, sophisticated control; effortless to follow.",
+      "7": "Generally fluent, occasional self-correction; good range and mostly accurate; clear pronunciation.",
+      "6": "Adequate flow with some hesitation; sufficient range; noticeable errors but meaning generally clear.",
+      "5": "Limited range; frequent hesitation and errors; strain for the listener at times."
+    }
   },
-  "scoring": { "overall_scale": { "min": 0, "max": 9 }, "normalization": "weighted_average" },
-  "mapping": { "to_cefr": [{ "min": 0.0, "max": 9.0, "cefr": "(DUMMY) Map later" }] },
-  "report": { "sections": ["summary", "criteria_breakdown", "errors", "recommendations"], "max_length_tokens": 700 }
+  "scoring": {
+    "overall_scale": { "min": 0, "max": 9 },
+    "normalization": "mean",
+    "round_to": 1
+  },
+  "mapping": {
+    "to_cefr": [
+      { "min": 0.0, "max": 3.5, "cefr": "A1–A2" },
+      { "min": 4.0, "max": 5.0, "cefr": "B1" },
+      { "min": 5.5, "max": 6.5, "cefr": "B2" },
+      { "min": 7.0, "max": 8.0, "cefr": "C1" },
+      { "min": 8.5, "max": 9.0, "cefr": "C2" }
+    ]
+  },
+  "report": {
+    "sections": [
+      "summary",
+      "criteria_breakdown",
+      "error_patterns",
+      "improvement_plan",
+      "quotes"
+    ],
+    "title": "English Speaking Assessment Report (IELTS-style)",
+    "max_length_tokens": 900,
+    "summary_line_template": "Overall: Band ${overall} (~${cefr}). Strength: ${top_strength}. Focus: ${top_focus}."
+  },
+  "evaluator_output_schema": {
+    "type": "object",
+    "required": [
+      "criteria",
+      "overall",
+      "cefr",
+      "common_errors",
+      "recommendations",
+      "evidence_quotes"
+    ],
+    "properties": {
+      "criteria": {
+        "type": "object",
+        "required": ["fluency_coherence", "lexical", "grammar", "pron"],
+        "properties": {
+          "fluency_coherence": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "comment": { "type": "string" }
+            }
+          },
+          "lexical": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "comment": { "type": "string" }
+            }
+          },
+          "grammar": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "comment": { "type": "string" }
+            }
+          },
+          "pron": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "comment": { "type": "string" }
+            }
+          }
+        }
+      },
+      "overall": { "type": "number" },
+      "cefr": { "type": "string" },
+      "common_errors": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "issue": { "type": "string" },
+            "fix": { "type": "string" }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 5
+      },
+      "recommendations": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 5,
+        "maxItems": 7
+      },
+      "evidence_quotes": {
+        "type": "array",
+        "items": { "type": "string" },
+        "minItems": 2,
+        "maxItems": 4
+      }
+    }
+  }
 }
