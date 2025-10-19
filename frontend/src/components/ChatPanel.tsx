@@ -101,13 +101,13 @@ export function ChatPanel() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleStart}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
             >
               {session ? "Restart Session" : "Start Session"}
             </button>
           </div>
         </div>
-        <div className="h-[480px] overflow-y-auto rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-inner">
+        <div className="h-[480px] overflow-y-auto rounded-xl border border-slate-200 bg-blue-50 p-4 shadow-inner">
           {transcript.length === 0 ? (
             <p className="text-center text-sm text-slate-500">
               Start a session to begin the conversation. Prompts will be read aloud, and you can answer by speaking.
@@ -125,34 +125,34 @@ export function ChatPanel() {
           <button
             onClick={handleFinish}
             disabled={!session || isLoading}
-            className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700"
           >
             Finish Session
           </button>
           <button
             onClick={handleEvaluate}
             disabled={!session || isLoading}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700"
           >
             Evaluate
           </button>
           <button
             onClick={handleReport}
             disabled={!evaluation || isLoading}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white shadow disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="rounded-lg bg-blue-800 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-blue-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700"
           >
             Generate Report
           </button>
         </div>
         {sessionSummary && (
-          <p className="rounded-lg bg-slate-100 px-4 py-2 text-sm text-slate-700 shadow">
+          <p className="rounded-lg bg-blue-50 px-4 py-2 text-sm text-blue-700 shadow">
             Words: {sessionSummary.word_count} · Duration: {sessionSummary.duration_seconds}s
           </p>
         )}
         {reportUrl && (
           <a
             href={reportUrl}
-            className="inline-block text-sm font-semibold text-blue-700 hover:underline"
+            className="inline-block text-sm font-semibold text-blue-600 transition hover:text-blue-700 hover:underline"
             target="_blank"
             rel="noreferrer"
           >

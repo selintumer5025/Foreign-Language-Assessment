@@ -19,12 +19,12 @@ export function ScoreCard({ evaluation }: ScoreCardProps) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="rounded-lg bg-blue-50 p-4">
-          <p className="text-sm text-blue-700 uppercase">Overall Score</p>
+          <p className="text-sm font-semibold text-blue-600 uppercase">Overall Score</p>
           <p className="text-3xl font-bold text-blue-800">{evaluation.overall_score.toFixed(2)} / 4</p>
         </div>
-        <div className="rounded-lg bg-emerald-50 p-4">
-          <p className="text-sm text-emerald-700 uppercase">CEFR Level</p>
-          <p className="text-3xl font-bold text-emerald-800">{evaluation.cefr_level}</p>
+        <div className="rounded-lg bg-blue-100 p-4">
+          <p className="text-sm font-semibold text-blue-700 uppercase">CEFR Level</p>
+          <p className="text-3xl font-bold text-blue-900">{evaluation.cefr_level}</p>
         </div>
       </div>
       <p className="text-slate-700">{evaluation.summary}</p>
