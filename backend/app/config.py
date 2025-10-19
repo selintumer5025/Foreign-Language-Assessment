@@ -20,6 +20,9 @@ class AppSettings(BaseModel):
     secret_token: str = Field(default="dev-secret", description="Simple bearer token for auth")
     report_language: str = Field(default="en", description="Report language code")
     email: EmailSettings = Field(default_factory=EmailSettings)
+    gpt5_api_key: str | None = Field(default=None, description="API key for GPT-5 evaluation")
+    gpt5_api_base_url: str = Field(default="https://api.openai.com/v1", description="Base URL for GPT-5 compatible APIs")
+    gpt5_model: str = Field(default="gpt-5", description="Model identifier to request for GPT-5 evaluations")
 
     @staticmethod
     def from_env() -> "AppSettings":
@@ -38,9 +41,18 @@ class AppSettings(BaseModel):
                 sendgrid_api_key=os.getenv("SENDGRID_API_KEY"),
                 default_sender=os.getenv("EMAIL_DEFAULT_SENDER", os.getenv("TARGET_EMAIL")),
             ),
+            gpt5_api_key=os.getenv("GPT5_API_KEY"),
+            gpt5_api_base_url=os.getenv("GPT5_API_BASE_URL", "https://api.openai.com/v1"),
+            gpt5_model=os.getenv("GPT5_MODEL", "gpt-5"),
         )
 
 
 @lru_cache(maxsize=1)
 def get_settings() -> AppSettings:
     return AppSettings.from_env()
+
+
+def set_gpt5_api_key(api_key: str) -> AppSettings:
+    os.environ["GPT5_API_KEY"] = api_key
+    get_settings.cache_clear()
+    return get_settings()

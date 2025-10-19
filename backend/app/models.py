@@ -147,3 +147,11 @@ class EmailResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
+
+
+class GPT5KeyRequest(BaseModel):
+    api_key: str = Field(..., min_length=1)
+
+
+class GPT5KeyStatus(BaseModel):
+    configured: bool

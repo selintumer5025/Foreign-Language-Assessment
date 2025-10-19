@@ -5,6 +5,7 @@ import type {
   ChatMessage,
   ChatResponse,
   DualEvaluationResponse,
+  Gpt5Status,
   ReportResponse,
   SessionFinishResponse,
   SessionStartResponse,
@@ -13,6 +14,7 @@ import type {
 
 const SESSION_KEY = ["session"];
 const TRANSCRIPT_KEY = ["transcript"];
+const GPT5_STATUS_KEY = ["gpt5-status"];
 
 export function useStartSession() {
   const queryClient = useQueryClient();
@@ -101,6 +103,30 @@ export function useGenerateReport() {
     mutationFn: async (payload: { evaluation: DualEvaluationResponse; session_metadata?: Record<string, unknown> }) => {
       const { data } = await api.post<ReportResponse>("/api/report", payload);
       return data;
+    }
+  });
+}
+
+export function useGpt5Status() {
+  return useQuery({
+    queryKey: GPT5_STATUS_KEY,
+    queryFn: async () => {
+      const { data } = await api.get<Gpt5Status>("/api/config/gpt5");
+      return data;
+    },
+    staleTime: Infinity,
+  });
+}
+
+export function useConfigureGpt5() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: { api_key: string }) => {
+      const { data } = await api.post<Gpt5Status>("/api/config/gpt5", payload);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(GPT5_STATUS_KEY, data);
     }
   });
 }
