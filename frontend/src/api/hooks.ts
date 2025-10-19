@@ -7,7 +7,8 @@ import type {
   EvaluationResponse,
   ReportResponse,
   SessionFinishResponse,
-  SessionStartResponse
+  SessionStartResponse,
+  InteractionMode
 } from "../types";
 
 const SESSION_KEY = ["session"];
@@ -16,7 +17,7 @@ const TRANSCRIPT_KEY = ["transcript"];
 export function useStartSession() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { mode: string; duration_minutes: number; user_name?: string }) => {
+    mutationFn: async (payload: { mode: InteractionMode; duration_minutes: number; user_name?: string }) => {
       const { data } = await api.post<SessionStartResponse>("/api/session/start", payload);
       return data;
     },

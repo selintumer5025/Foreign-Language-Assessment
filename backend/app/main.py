@@ -52,7 +52,12 @@ def start_session(payload: SessionStartRequest, _: str = Depends(get_current_tok
     session = store.create_session(mode=payload.mode, duration_minutes=payload.duration_minutes, user_name=payload.user_name)
     greeting = next_prompt([])
     session.add_message(ChatMessage(role="assistant", content=greeting))
-    return SessionStartResponse(session_id=session.session_id, started_at=session.started_at, assistant_greeting=greeting)
+    return SessionStartResponse(
+        session_id=session.session_id,
+        started_at=session.started_at,
+        assistant_greeting=greeting,
+        mode=session.mode,
+    )
 
 
 @app.post("/api/chat", response_model=ChatResponse, tags=["chat"])
@@ -68,7 +73,7 @@ def chat(payload: ChatRequest, _: str = Depends(get_current_token)) -> ChatRespo
     assistant_reply = next_prompt(session.messages)
     session.add_message(ChatMessage(role="assistant", content=assistant_reply))
     turn_count = store.increment_turn(session.session_id)
-    return ChatResponse(assistant_message=assistant_reply, turns_completed=turn_count)
+    return ChatResponse(assistant_message=assistant_reply, turns_completed=turn_count, mode=session.mode)
 
 
 @app.post("/api/session/finish", response_model=SessionFinishResponse, tags=["session"])

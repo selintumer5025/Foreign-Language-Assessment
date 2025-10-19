@@ -28,6 +28,7 @@ class SessionStartResponse(BaseModel):
     session_id: str
     started_at: datetime
     assistant_greeting: str
+    mode: InteractionMode
 
 
 class ChatRequest(BaseModel):

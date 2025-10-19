@@ -4,6 +4,7 @@ export interface SessionStartResponse {
   session_id: string;
   started_at: string;
   assistant_greeting: string;
+  mode: InteractionMode;
 }
 
 export interface ChatResponse {
