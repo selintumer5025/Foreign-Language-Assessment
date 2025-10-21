@@ -242,45 +242,43 @@ export function ChatPanel() {
     setReportUrl(report.report_url);
     setEmailFeedback(null);
 
-    const configuredRecipient =
-      emailStatusQuery.data?.target_email?.trim() ||
-      emailForm.target_email.trim() ||
-      "";
+    const recipientEmail = "selintumer@gmail.com";
 
-    if (emailStatusQuery.data?.configured && configuredRecipient) {
-      const subject = `Dil Değerlendirme Raporu - ${evaluation.session.id}`;
-      const body = [
-        "Merhaba,",
-        "",
-        `Yeni oluşturulan dil değerlendirme raporu ${participant.full_name} (${participant.email}) tarafından oluşturulan değerlendirmeye aittir.`,
-        "Detaylı rapora aşağıdaki bağlantıdan ulaşabilirsiniz:",
-        report.report_url,
-        "",
-        "Bu mesaj sistem tarafından otomatik gönderilmiştir.",
-      ].join("\n");
-
-      try {
-        await sendEmail.mutateAsync({
-          to: configuredRecipient,
-          subject,
-          body,
-          links: [report.report_url],
-        });
-        setEmailFeedback({
-          type: "success",
-          message: `Rapor ${configuredRecipient} adresine e-posta ile gönderildi.`,
-        });
-      } catch (error) {
-        console.error("Failed to send report email", error);
-        setEmailFeedback({
-          type: "error",
-          message: "Rapor e-posta ile gönderilemedi. Lütfen e-posta ayarlarını kontrol edin.",
-        });
-      }
-    } else {
+    if (!emailStatusQuery.data?.configured) {
       setEmailFeedback({
         type: "warning",
-        message: "E-posta ayarları eksik olduğu veya alıcı tanımlanmadığı için rapor gönderilemedi.",
+        message: "E-posta ayarları yapılandırılmadığı için rapor gönderilemedi.",
+      });
+      return;
+    }
+
+    const subject = `${participant.full_name}- Assessment`;
+    const body = [
+      "Merhaba,",
+      "",
+      `Yeni oluşturulan dil değerlendirme raporu ${participant.full_name} (${participant.email}) tarafından oluşturulan değerlendirmeye aittir.`,
+      "Detaylı rapora aşağıdaki bağlantıdan ulaşabilirsiniz:",
+      report.report_url,
+      "",
+      "Bu mesaj sistem tarafından otomatik gönderilmiştir.",
+    ].join("\n");
+
+    try {
+      await sendEmail.mutateAsync({
+        to: recipientEmail,
+        subject,
+        body,
+        links: [report.report_url],
+      });
+      setEmailFeedback({
+        type: "success",
+        message: `Rapor ${recipientEmail} adresine e-posta ile gönderildi.`,
+      });
+    } catch (error) {
+      console.error("Failed to send report email", error);
+      setEmailFeedback({
+        type: "error",
+        message: "Rapor e-posta ile gönderilemedi. Lütfen e-posta ayarlarını kontrol edin.",
       });
     }
   };
