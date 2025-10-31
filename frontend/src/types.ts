@@ -1,5 +1,18 @@
 export type InteractionMode = "voice";
 
+export interface SessionConsent {
+  granted: boolean;
+  granted_at?: string;
+}
+
+export interface SessionStartRequest {
+  mode: InteractionMode;
+  duration_minutes: number;
+  user_name?: string;
+  user_email?: string;
+  consent: SessionConsent;
+}
+
 export interface SessionStartResponse {
   session_id: string;
   started_at: string;

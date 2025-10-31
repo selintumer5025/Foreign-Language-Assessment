@@ -20,11 +20,17 @@ class ChatMessage(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 
+class SessionConsent(BaseModel):
+    granted: bool = Field(default=False, description="Whether the participant has granted consent")
+    granted_at: Optional[datetime] = Field(default=None, description="Timestamp when consent was granted")
+
+
 class SessionStartRequest(BaseModel):
     mode: InteractionMode = InteractionMode.TEXT
     duration_minutes: int = Field(default=10, ge=1, le=60)
     user_name: Optional[str] = Field(default=None, description="Optional user display name")
     user_email: Optional[EmailStr] = Field(default=None, description="Optional user email address")
+    consent: SessionConsent = Field(..., description="Participant consent metadata")
 
 
 class SessionStartResponse(BaseModel):
