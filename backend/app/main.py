@@ -6,7 +6,7 @@ from typing import List
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from .auth import get_current_token
 from .config import get_settings, set_gpt5_api_key, set_email_settings
@@ -35,7 +35,7 @@ from .services.conversation import next_prompt
 from .services.evaluation import evaluate_transcript
 from .services.gpt5_client import clear_gpt5_client_cache
 from .services.emailer import send_email
-from .services.reporting import REPORTS_DIR, persist_report
+from .services.reporting import persist_report, resolve_report_token
 from .services.session_store import get_store
 
 app = FastAPI(title="Foreign Language Assessment API", version="0.1.0")
@@ -48,9 +48,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.mount("/reports", StaticFiles(directory=REPORTS_DIR, html=True), name="generated_reports")
-
 
 def _resolve_frontend_dist() -> Path | None:
     """Return the path to the built frontend assets if they exist."""
@@ -174,6 +171,19 @@ def evaluate(payload: EvaluationRequest, _: str = Depends(get_current_token)) ->
 def generate_report(payload: ReportRequest, _: str = Depends(get_current_token)) -> ReportResponse:
     html, url = persist_report(payload.evaluation, session_metadata=payload.session_metadata)
     return ReportResponse(report_url=url, pdf_url=None, html=html)
+
+
+@app.get("/api/reports/{token}", tags=["report"])
+def download_report(token: str) -> FileResponse:
+    try:
+        record = resolve_report_token(token)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+    if not record.path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+
+    return FileResponse(path=record.path, media_type="text/html", filename=record.filename)
 
 
 @app.post("/api/email", response_model=EmailResponse, tags=["email"])
