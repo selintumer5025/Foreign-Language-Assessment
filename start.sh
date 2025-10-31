@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure Python backend dependencies are available before starting the service
+python -m pip install --upgrade pip
+python -m pip install --requirement backend/requirements.txt
+
 # Build the frontend assets before starting the backend service
 npm install --prefix frontend
 npm run build --prefix frontend
