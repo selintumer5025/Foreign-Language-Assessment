@@ -20,9 +20,15 @@ import { ScoreCard } from "./ScoreCard";
 import type {
   DualEvaluationResponse,
   EmailConfigUpdatePayload,
+  EmailAttachmentPayload,
   InteractionMode,
   SessionFinishResponse
 } from "../types";
+
+type EmailFeedbackState = {
+  type: "success" | "error" | "warning" | "info";
+  message: string;
+};
 
 type ParticipantFormState = {
   fullName: string;
@@ -45,6 +51,16 @@ const SAMPLE_RESPONSES = [
   "A recent challenge involved migrating part of our infrastructure without disrupting users. I designed a phased rollout, wrote automation scripts to validate data integrity, and coordinated with support teams. The migration completed smoothly and reduced latency by nearly 20 percent.",
   "My long-term goal is to keep growing as a product-minded engineer. That means staying close to user feedback, experimenting with new technologies, and sharing knowledge through talks or documentation so the entire team levels up together.",
 ] as const;
+
+function encodeStringToBase64(value: string): string {
+  const encoder = new TextEncoder();
+  const bytes = encoder.encode(value);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+}
 
 export function ChatPanel() {
   const { data: transcript } = useTranscript();
@@ -77,7 +93,7 @@ export function ChatPanel() {
   });
   const [emailConfigDismissed, setEmailConfigDismissed] = useState(false);
   const [emailBannerMessage, setEmailBannerMessage] = useState<string | null>(null);
-  const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error" | "warning"; message: string } | null>(null);
+  const [emailFeedback, setEmailFeedback] = useState<EmailFeedbackState | null>(null);
   const [participantModalOpen, setParticipantModalOpen] = useState(true);
   const [participantForm, setParticipantForm] = useState<ParticipantFormState>({
     fullName: "",
@@ -111,6 +127,8 @@ export function ChatPanel() {
         return "border-emerald-400/40 bg-emerald-500/10 text-emerald-100";
       case "error":
         return "border-rose-400/40 bg-rose-500/10 text-rose-100";
+      case "info":
+        return "border-sky-400/40 bg-sky-500/10 text-sky-100";
       case "warning":
       default:
         return "border-amber-400/40 bg-amber-500/10 text-amber-100";
@@ -516,6 +534,36 @@ export function ChatPanel() {
       return;
     }
 
+    setEmailFeedback({
+      type: "info",
+      message: "Rapor başarıyla oluşturuldu. Mail hazırlanıyor...",
+    });
+
+    const reportAttachments: EmailAttachmentPayload[] = [];
+    try {
+      const reportFilename = evaluation.session.id
+        ? `assessment_report_${evaluation.session.id}.html`
+        : "assessment_report.html";
+      const encodedReport = encodeStringToBase64(report.html);
+      reportAttachments.push({
+        filename: reportFilename,
+        content_type: "text/html",
+        data: encodedReport,
+      });
+    } catch (error) {
+      console.error("Failed to prepare report attachment", error);
+      setEmailFeedback({
+        type: "error",
+        message: "Rapor e-posta eki hazırlanırken bir hata oluştu.",
+      });
+      return;
+    }
+
+    setEmailFeedback({
+      type: "info",
+      message: "Mail gönderiliyor...",
+    });
+
     const subject = `${participant.full_name}- Assessment`;
     const body = [
       "Merhaba,",
@@ -535,10 +583,11 @@ export function ChatPanel() {
         body,
         links: [report.report_url],
         session_id: session?.session_id,
+        attachments: reportAttachments,
       });
       setEmailFeedback({
         type: "success",
-        message: `Rapor ${recipientEmail} adresine e-posta ile gönderildi.`,
+        message: `Mail ${recipientEmail} adresine başarıyla gönderildi.`,
       });
     } catch (error) {
       console.error("Failed to send report email", error);
