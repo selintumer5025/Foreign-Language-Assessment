@@ -1036,7 +1036,8 @@ export function ChatPanel() {
               Mülakat Koçu Yapay Zekâ Asistanı
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-slate-600 dark:text-slate-300">
-              Tüm yönlendirmeler Türkçe, konuşma egzersizleri ise İngilizce yapılır. Akıcı ve anlaşılır yanıtlar vermeniz için soruları yüksek sesle okuyabilir ve sesle yanıtlayabilirsiniz.
+              <span className="block">Tüm yönlendirmeler Türkçe, konuşma egzersizleri ise İngilizce yapılır.</span>
+              <span className="block">Akıcı ve anlaşılır yanıtlar vermeniz değerlendirmeyi olumlu etkileyecektir.</span>
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <button
@@ -1140,7 +1141,7 @@ export function ChatPanel() {
                       </svg>
                     </div>
                     <p className="max-w-md text-lg text-slate-600 dark:text-slate-400">
-                      Oturumu başlatarak İngilizce konuşma alıştırmasına geçebilirsiniz. Soruları yüksek sesle dinleyip mikrofonla yanıtlayabilir veya metin yazarak iletebilirsiniz.
+                      Oturumu başlatarak İngilizce konuşma alıştırmasına geçebilirsiniz. Soruları yüksek sesle dinleyip mikrofonla yanıtlayabilirsiniz.
                     </p>
                   </div>
                 ) : (

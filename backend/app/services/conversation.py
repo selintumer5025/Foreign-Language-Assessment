@@ -104,7 +104,7 @@ def _closing_message(standard_id: str, config: dict | None) -> str:
     if config:
         label = config.get("meta", {}).get("label", label)
     return (
-        f"Thanks for completing the {label} practice. When you're ready, we can review your performance together."
+        f"{label} konuşma pratiğini tamamladığınız için teşekkürler. Oturumu Sonlandır tuşuna basabilir, raporunuzun paylaşılmasını sağlayabilirsiniz."
     )
 
 
