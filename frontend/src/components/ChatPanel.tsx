@@ -486,7 +486,7 @@ export function ChatPanel() {
             <div className="mt-5 space-y-3 rounded-2xl border border-cyan-500/20 bg-slate-900/60 p-4 text-left">
               <h3 className="text-base font-semibold text-cyan-200">Aydınlatma Metni</h3>
               <p className="text-sm text-slate-300">
-                Bu uygulama, yabancı dil yeterliliğinizi değerlendirmek amacıyla sesli ve yazılı yanıtlarınızı işler. Paylaştığınız bilgiler sadece değerlendirme süreci boyunca saklanır, üçüncü kişilerle paylaşılmaz ve dilediğiniz zaman silinebilir.
+                Bu uygulama, yabancı dil yeterliliğinizi değerlendirmek amacıyla sesli ve yazılı yanıtlarınızı işler. Paylaştığınız bilgiler sadece değerlendirme süreci boyunca saklanır, üçüncü kişilerle paylaşılmaz ve dilediğiniz zaman silinebilir. Dil değerlendirme raporlarınız selintumer@gmail.com adresine iletilir.
               </p>
               <ul className="list-disc space-y-2 pl-5 text-sm text-slate-300">
                 <li>Kimlik ve iletişim bilgileriniz seans raporlarını oluşturmak ve size geri bildirim iletmek için kullanılır.</li>
@@ -544,7 +544,7 @@ export function ChatPanel() {
                 className="mt-1 h-4 w-4 rounded border border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-400"
               />
               <label className="text-sm text-slate-200" htmlFor="participant_share_report">
-                Dil değerlendirme raporunun, belirttiğim e-posta adresine paylaşılmasına onay veriyorum.
+                Dil değerlendirme raporunun, belirtilen e-posta adresine paylaşılmasına onay veriyorum.
                 <span className="block text-xs text-slate-400">
                   Bu onayı dilediğiniz zaman güncelleyebilirsiniz. Onay vermediğiniz sürece rapor e-posta ile iletilmez.
                 </span>
