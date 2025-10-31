@@ -14,7 +14,6 @@ import {
   useTranscript,
   useUploadSessionAudio,
 } from "../api/hooks";
-import { ChatInput } from "./ChatInput";
 import { MessageBubble } from "./MessageBubble";
 import { ScoreCard } from "./ScoreCard";
 import type {
@@ -325,6 +324,134 @@ export function ChatPanel() {
 
   const canChat = Boolean(session?.session_id) && !evaluation && !blockingForConfig;
   const activeMode: InteractionMode = session?.mode ?? "voice";
+  const [isRecording, setIsRecording] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [activePromptId, setActivePromptId] = useState<string | null>(null);
+  const [lastCapturedByMessage, setLastCapturedByMessage] = useState<Record<string, string>>({});
+  const recognitionRef = useRef<any>(null);
+  const sendRef = useRef<(message: string) => void>(() => {});
+  const disabledRef = useRef(false);
+  const captureBufferRef = useRef("");
+  const manualStopRef = useRef(false);
+  const shouldResetOnStartRef = useRef(false);
+  const restartTimeoutRef = useRef<number | null>(null);
+  const activePromptIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    activePromptIdRef.current = activePromptId;
+  }, [activePromptId]);
+
+  useEffect(() => {
+    sendRef.current = handleSend;
+  }, [handleSend]);
+
+  useEffect(() => {
+    if (transcript.length === 0) {
+      setLastCapturedByMessage({});
+      setActivePromptId(null);
+    }
+  }, [transcript.length]);
+
+  useEffect(() => {
+    if (activeMode !== "voice") {
+      console.warn("ChatPanel now only supports voice mode.");
+    }
+  }, [activeMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognitionCtor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognitionCtor) {
+      setSpeechSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.continuous = true;
+
+    recognition.onstart = () => {
+      if (shouldResetOnStartRef.current) {
+        captureBufferRef.current = "";
+        shouldResetOnStartRef.current = false;
+      }
+      setIsRecording(true);
+    };
+
+    recognition.onend = () => {
+      setIsRecording(false);
+      if (restartTimeoutRef.current) {
+        window.clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = null;
+      }
+
+      const finalMessage = captureBufferRef.current.trim();
+      const targetMessageId = activePromptIdRef.current;
+
+      if (manualStopRef.current) {
+        manualStopRef.current = false;
+        if (finalMessage && !disabledRef.current && targetMessageId) {
+          sendRef.current(finalMessage);
+          setLastCapturedByMessage((prev) => ({
+            ...prev,
+            [targetMessageId]: finalMessage,
+          }));
+        }
+        captureBufferRef.current = "";
+        setActivePromptId(null);
+        return;
+      }
+
+      if (!disabledRef.current && recognitionRef.current) {
+        restartTimeoutRef.current = window.setTimeout(() => {
+          try {
+            recognitionRef.current?.start();
+          } catch {
+            // Ignore restart failures
+          }
+        }, 250);
+      }
+    };
+
+    recognition.onerror = () => {
+      setIsRecording(false);
+      setActivePromptId(null);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcriptValue = event?.results?.[0]?.[0]?.transcript ?? "";
+      const normalized = transcriptValue.trim();
+      if (!normalized) {
+        return;
+      }
+
+      captureBufferRef.current = `${captureBufferRef.current} ${normalized}`.trim();
+    };
+
+    recognitionRef.current = recognition;
+    setSpeechSupported(true);
+
+    return () => {
+      manualStopRef.current = true;
+      if (restartTimeoutRef.current) {
+        window.clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = null;
+      }
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // ignore if recognition was never started
+        }
+      }
+      recognitionRef.current = null;
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -444,10 +571,48 @@ export function ChatPanel() {
     });
   };
 
-  const handleSend = async (message: string) => {
-    if (!session?.session_id || blockingForConfig) return;
-    await chatMutation.mutateAsync({ session_id: session.session_id, user_message: message });
-  };
+  const handleSend = useCallback(
+    async (message: string) => {
+      if (!session?.session_id || blockingForConfig) return;
+      await chatMutation.mutateAsync({ session_id: session.session_id, user_message: message });
+    },
+    [session?.session_id, blockingForConfig, chatMutation]
+  );
+
+  const handleToggleRecordingForMessage = useCallback(
+    (messageId: string) => {
+      if (!recognitionRef.current || disabledRef.current) return;
+
+      if (isRecording) {
+        if (activePromptIdRef.current !== messageId) {
+          return;
+        }
+        manualStopRef.current = true;
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          setIsRecording(false);
+        }
+        return;
+      }
+
+      setActivePromptId(messageId);
+      captureBufferRef.current = "";
+      setLastCapturedByMessage((prev) => {
+        const next = { ...prev };
+        delete next[messageId];
+        return next;
+      });
+      manualStopRef.current = false;
+      shouldResetOnStartRef.current = true;
+      try {
+        recognitionRef.current.start();
+      } catch {
+        setIsRecording(false);
+      }
+    },
+    [isRecording]
+  );
 
   const handleFinish = async () => {
     if (!session?.session_id || blockingForConfig) return;
@@ -629,6 +794,19 @@ export function ChatPanel() {
       configureGpt5.isPending,
     ]
   );
+
+  useEffect(() => {
+    const disabled = !canChat || isLoading || !speechSupported;
+    disabledRef.current = disabled;
+    if (disabled && recognitionRef.current && isRecording) {
+      manualStopRef.current = true;
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // ignore stop failures
+      }
+    }
+  }, [canChat, isLoading, speechSupported, isRecording]);
 
   const handleApiKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
     setApiKeyInput(event.target.value);
@@ -1070,8 +1248,19 @@ export function ChatPanel() {
                 <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                   Mikrofon kontrollerine buradan ulaşarak İngilizce yanıtlarınızı hızlıca kaydedin.
                 </p>
-                <div className="mt-4">
-                  <ChatInput onSend={handleSend} disabled={!canChat || isLoading} mode={activeMode} />
+                <div className="mt-4 space-y-3 text-xs text-slate-600 dark:text-slate-300">
+                  <p>
+                    Soruların yanında yer alan <span className="font-semibold text-cyan-700 dark:text-cyan-200">İngilizce Kaydı Başlat</span>
+                    {" "}düğmesine basarak yanıtınızı kaydedebilir, aynı tuşa tekrar basarak kaydı sonlandırabilirsiniz.
+                  </p>
+                  <p>
+                    Aktif bir kayıt sırasında yalnızca ilgili sorunun tuşu kullanılabilir. Farklı bir soruya geçmek için mevcut kaydı durdurmayı unutmayın.
+                  </p>
+                  {!speechSupported && (
+                    <p className="rounded-lg border border-blue-200 bg-slate-50 p-3 text-blue-700 dark:border-blue-400/60 dark:bg-slate-800/60 dark:text-blue-200">
+                      Bu tarayıcıda ses yakalama desteklenmiyor. İngilizce pratiğe devam etmek için desteklenen bir tarayıcıya geçebilirsiniz.
+                    </p>
+                  )}
                 </div>
                 {session && (
                   <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 dark:border-slate-700/60 dark:bg-slate-900/70 dark:text-slate-200">
@@ -1146,9 +1335,48 @@ export function ChatPanel() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {transcript.map((message) => (
-                      <MessageBubble key={message.id} message={message} />
-                    ))}
+                    {transcript.map((message) => {
+                      if (message.role === "assistant") {
+                        const isActive = isRecording && activePromptId === message.id;
+                        const disabled =
+                          !speechSupported ||
+                          !canChat ||
+                          isLoading ||
+                          (isRecording && activePromptId !== message.id);
+                        const lastCaptured = lastCapturedByMessage[message.id];
+
+                        return (
+                          <div key={message.id} className="space-y-2">
+                            <div className="flex flex-wrap items-start justify-start gap-3">
+                              <div className="max-w-xl rounded-2xl bg-white px-4 py-2 text-slate-900 shadow dark:bg-slate-800 dark:text-slate-100">
+                                <p className="text-sm whitespace-pre-line">{message.content}</p>
+                                <p className="mt-1 text-[11px] uppercase tracking-wide opacity-70">
+                                  {new Date(message.timestamp).toLocaleTimeString()}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleRecordingForMessage(message.id)}
+                                disabled={disabled}
+                                className={`rounded-lg px-4 py-3 text-sm font-semibold text-white shadow transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700 ${
+                                  isActive ? "bg-blue-800 hover:bg-blue-900" : "bg-blue-600 hover:bg-blue-700"
+                                }`}
+                              >
+                                {isActive ? "İngilizce Kaydını Durdur" : "İngilizce Kaydı Başlat"}
+                              </button>
+                            </div>
+                            {lastCaptured && (
+                              <div className="max-w-xl rounded-lg border border-blue-200 bg-slate-50 px-4 py-3 text-xs text-slate-700 shadow dark:border-blue-400/60 dark:bg-slate-800/60 dark:text-slate-100">
+                                <p className="font-semibold text-blue-700 dark:text-blue-300">Son kaydedilen yanıt</p>
+                                <p className="mt-1 leading-snug">{lastCaptured}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      return <MessageBubble key={message.id} message={message} />;
+                    })}
                   </div>
                 )}
               </div>
