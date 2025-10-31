@@ -730,17 +730,17 @@ export function ChatPanel() {
   return (
     <div className="relative min-h-screen">
       {participantModalOpen && (
-        <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-200/80 backdrop-blur-sm dark:bg-slate-950/80">
           <div className="flex min-h-full items-center justify-center px-4 py-10">
-            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-cyan-500/40 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
-              <h2 className="text-2xl font-bold">Please enter your information</h2>
-              <p className="mt-2 text-sm text-slate-300">Please enter your information. Görüşmeye başlamadan önce mikrofonunuzun açık olduğundan emin olun.</p>
-              <div className="mt-5 space-y-3 rounded-2xl border border-cyan-500/20 bg-slate-900/60 p-4 text-left">
-                <h3 className="text-base font-semibold text-cyan-200">Aydınlatma Metni</h3>
-                <p className="text-sm text-slate-300">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-cyan-400/40 bg-white p-8 text-slate-800 shadow-2xl dark:border-cyan-500/40 dark:bg-slate-900/95 dark:text-slate-100">
+              <h2 className="text-2xl font-bold">Bilgilerinizi paylaşın</h2>
+              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Görüşmeye başlamadan önce mikrofonunuzun açık olduğundan ve sessiz bir ortamda bulunduğunuzdan emin olun.</p>
+              <div className="mt-5 space-y-3 rounded-2xl border border-cyan-300/50 bg-cyan-50/70 p-4 text-left dark:border-cyan-500/20 dark:bg-slate-900/60">
+                <h3 className="text-base font-semibold text-cyan-700 dark:text-cyan-200">Aydınlatma Metni</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
                   Bu uygulama, yabancı dil yeterliliğinizi değerlendirmek amacıyla sesli ve yazılı yanıtlarınızı işler. Paylaştığınız bilgiler sadece değerlendirme süreci boyunca saklanır, üçüncü kişilerle paylaşılmaz ve dilediğiniz zaman silinebilir. Dil değerlendirme raporlarınız selintumer@gmail.com adresine iletilir.
                 </p>
-                <ul className="list-disc space-y-2 pl-5 text-sm text-slate-300">
+                <ul className="list-disc space-y-2 pl-5 text-sm text-slate-600 dark:text-slate-300">
                   <li>Kimlik ve iletişim bilgileriniz seans raporlarını oluşturmak ve size geri bildirim iletmek için kullanılır.</li>
                   <li>Yanıtlarınız yapay zekâ modelleri tarafından analiz edilerek ilerlemenize yardımcı olacak puan ve öneriler sunulur.</li>
                   <li>Dilediğiniz zaman desteğe başvurarak verilerinize erişme, düzeltme veya silme hakkınızı kullanabilirsiniz.</li>
@@ -748,56 +748,56 @@ export function ChatPanel() {
               </div>
               <div className="mt-6 grid gap-4">
                 <div className="grid gap-2">
-                  <label className="text-sm font-semibold text-slate-300" htmlFor="participant_full_name">Full Name</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="participant_full_name">Ad Soyad</label>
                   <input
                     id="participant_full_name"
                     name="fullName"
                     type="text"
                     value={participantForm.fullName}
                     onChange={handleParticipantInputChange}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                    placeholder="John Doe"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    placeholder="Adınız Soyadınız"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <label className="text-sm font-semibold text-slate-300" htmlFor="participant_email">Email Address</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="participant_email">E-posta Adresi</label>
                   <input
                     id="participant_email"
                     name="email"
                     type="email"
                     value={participantForm.email}
                     onChange={handleParticipantInputChange}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                    placeholder="example@domain.com"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                    placeholder="ornek@domain.com"
                   />
                 </div>
               </div>
-              <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-4">
+              <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/80">
                 <input
                   id="participant_consent"
                   name="consent"
                   type="checkbox"
                   checked={participantForm.consent}
                   onChange={handleParticipantInputChange}
-                  className="mt-1 h-4 w-4 rounded border border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-400"
+                  className="mt-1 h-4 w-4 rounded border border-slate-400 text-cyan-600 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-cyan-500"
                   required
                 />
-                <label className="text-sm text-slate-200" htmlFor="participant_consent">
+                <label className="text-sm text-slate-700 dark:text-slate-200" htmlFor="participant_consent">
                   Aydınlatma metnini okudum, kişisel verilerimin değerlendirme oturumu kapsamında işlenmesine izin veriyorum.
                 </label>
               </div>
-              <div className="mt-4 flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-4">
+              <div className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/80">
                 <input
                   id="participant_share_report"
                   name="shareReport"
                   type="checkbox"
                   checked={participantForm.shareReport}
                   onChange={handleParticipantInputChange}
-                  className="mt-1 h-4 w-4 rounded border border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-400"
+                  className="mt-1 h-4 w-4 rounded border border-slate-400 text-cyan-600 focus:ring-cyan-400 dark:border-slate-600 dark:bg-slate-800 dark:text-cyan-500"
                 />
-                <label className="text-sm text-slate-200" htmlFor="participant_share_report">
+                <label className="text-sm text-slate-700 dark:text-slate-200" htmlFor="participant_share_report">
                   Dil değerlendirme raporunun, belirtilen e-posta adresine paylaşılmasına onay veriyorum.
-                  <span className="block text-xs text-slate-400">
+                  <span className="block text-xs text-slate-500 dark:text-slate-400">
                     Bu onayı dilediğiniz zaman güncelleyebilirsiniz. Onay vermediğiniz sürece rapor e-posta ile iletilmez.
                   </span>
                 </label>
@@ -809,8 +809,8 @@ export function ChatPanel() {
                   disabled={!participantFormValid}
                   className="relative overflow-hidden rounded-xl px-6 py-3 font-semibold text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <span className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 transition-transform duration-300"></span>
-                  <span className="relative">Save and Continue</span>
+                  <span className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 transition-transform duration-300 dark:from-cyan-500 dark:to-blue-500"></span>
+                  <span className="relative">Kaydet ve Devam Et</span>
                 </button>
               </div>
             </div>
@@ -818,36 +818,36 @@ export function ChatPanel() {
         </div>
       )}
       {gpt5StatusQuery.isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
-          <div className="rounded-2xl border border-violet-500/30 bg-slate-900/90 px-8 py-6 text-center text-slate-200 shadow-2xl">
-            <p className="text-lg font-semibold">Checking GPT-5 configuration…</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-200/80 backdrop-blur-sm dark:bg-slate-950/80">
+          <div className="rounded-2xl border border-violet-400/40 bg-white px-8 py-6 text-center text-slate-800 shadow-2xl dark:border-violet-500/30 dark:bg-slate-900/90 dark:text-slate-200">
+            <p className="text-lg font-semibold">GPT-5 yapılandırması kontrol ediliyor…</p>
           </div>
         </div>
       )}
 
       {requireApiKey && !gpt5StatusQuery.isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-violet-500/50 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
-            <h2 className="text-2xl font-bold">Connect GPT-5 for Scoring</h2>
-            <p className="mt-2 text-sm text-slate-300">
-              Enter your GPT-5 API key to enable TOEFL/IELTS evaluations. The key is stored in server memory for this session only.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-200/80 backdrop-blur-sm dark:bg-slate-950/80">
+          <div className="w-full max-w-lg rounded-3xl border border-violet-400/50 bg-white p-8 text-slate-800 shadow-2xl dark:border-violet-500/50 dark:bg-slate-900/95 dark:text-slate-100">
+            <h2 className="text-2xl font-bold">Değerlendirme için GPT-5 anahtarını ekleyin</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+              TOEFL ve IELTS değerlendirmelerini etkinleştirmek için GPT-5 API anahtarınızı girin. Anahtar yalnızca bu oturum boyunca sunucu belleğinde tutulur.
             </p>
-            <label className="mt-6 block text-sm font-semibold text-slate-300" htmlFor="gpt5-api-key">
-              GPT-5 API Key
+            <label className="mt-6 block text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="gpt5-api-key">
+              GPT-5 API Anahtarı
             </label>
             <input
               id="gpt5-api-key"
               type="password"
-              className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+              className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
               placeholder="sk-..."
               value={apiKeyInput}
               onChange={handleApiKeyChange}
               disabled={configureGpt5.isPending}
             />
             {apiKeyError ? (
-              <p className="mt-2 text-sm text-rose-400">{apiKeyError}</p>
+              <p className="mt-2 text-sm text-rose-500 dark:text-rose-400">{apiKeyError}</p>
             ) : (
-              <p className="mt-2 text-xs text-slate-400">Need help? Contact your administrator for access.</p>
+              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Yardım gerekiyor mu? Yönetici ekibinizle iletişime geçin.</p>
             )}
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
@@ -856,53 +856,53 @@ export function ChatPanel() {
                 className="group relative overflow-hidden rounded-xl px-6 py-3 font-semibold text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform duration-300 group-hover:scale-105"></div>
-                <span className="relative">Save API Key</span>
+                <span className="relative">API Anahtarını Kaydet</span>
               </button>
             </div>
           </div>
         </div>
       )}
       {emailModalOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-3xl border border-amber-500/50 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-200/80 backdrop-blur-sm dark:bg-slate-950/80">
+          <div className="w-full max-w-2xl rounded-3xl border border-amber-300 bg-white p-8 text-slate-800 shadow-2xl dark:border-amber-500/50 dark:bg-slate-900/95 dark:text-slate-100">
             <h2 className="text-2xl font-bold">E-posta Ayarlarını Tamamlayın</h2>
-            <p className="mt-2 text-sm text-slate-300">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
               Raporlarınızın otomatik olarak gönderilmesi için SMTP bilgilerini girin. Bu adımı şimdi atlayabilirsiniz ancak e-posta gönderimi çalışmayacaktır.
             </p>
             {emailStatusQuery.data?.missing_fields?.length ? (
-              <p className="mt-3 text-xs text-amber-300">
+              <p className="mt-3 text-xs text-amber-600 dark:text-amber-300">
                 Eksik alanlar: {emailStatusQuery.data.missing_fields.join(", ")}
               </p>
             ) : null}
             <div className="mt-6 grid gap-4">
               <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-300" htmlFor="smtp_host">SMTP Sunucusu</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="smtp_host">SMTP Sunucusu</label>
                 <input
                   id="smtp_host"
                   name="smtp_host"
                   type="text"
                   value={emailForm.smtp_host}
                   onChange={handleEmailInputChange}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   placeholder="smtp.mailprovider.com"
                   disabled={configureEmail.isPending}
                 />
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-300" htmlFor="target_email">Varsayılan Rapor Alıcısı</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="target_email">Varsayılan Rapor Alıcısı</label>
                 <input
                   id="target_email"
                   name="target_email"
                   type="email"
                   value={emailForm.target_email}
                   onChange={handleEmailInputChange}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   placeholder="ornek@domain.com"
                 />
               </div>
               <div className="grid gap-2 sm:grid-cols-2 sm:gap-4">
                 <div className="grid gap-2">
-                  <label className="text-sm font-semibold text-slate-300" htmlFor="smtp_port">Port</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="smtp_port">Port</label>
                   <input
                     id="smtp_port"
                     name="smtp_port"
@@ -910,62 +910,62 @@ export function ChatPanel() {
                     min={1}
                     value={emailForm.smtp_port}
                     onChange={handleEmailInputChange}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     placeholder="587"
                     disabled={configureEmail.isPending}
                   />
                 </div>
                 <div className="grid gap-2">
-                  <label className="text-sm font-semibold text-slate-300" htmlFor="smtp_username">Kullanıcı Adı</label>
+                  <label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="smtp_username">Kullanıcı Adı</label>
                   <input
                     id="smtp_username"
                     name="smtp_username"
                     type="text"
                     value={emailForm.smtp_username}
                     onChange={handleEmailInputChange}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                     placeholder="user@example.com"
                     disabled={configureEmail.isPending}
                   />
                 </div>
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-300" htmlFor="smtp_password">Şifre</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="smtp_password">Şifre</label>
                 <input
                   id="smtp_password"
                   name="smtp_password"
                   type="password"
                   value={emailForm.smtp_password}
                   onChange={handleEmailInputChange}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   placeholder="••••••••"
                   disabled={configureEmail.isPending}
                 />
               </div>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-300" htmlFor="default_sender">Varsayılan Gönderen</label>
+                <label className="text-sm font-semibold text-slate-700 dark:text-slate-200" htmlFor="default_sender">Varsayılan Gönderen</label>
                 <input
                   id="default_sender"
                   name="default_sender"
                   type="email"
                   value={emailForm.default_sender}
                   onChange={handleEmailInputChange}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                   placeholder="noreply@example.com"
                   disabled={configureEmail.isPending}
                 />
               </div>
             </div>
             {configureEmail.isError && (
-              <p className="mt-4 text-sm text-rose-400">Ayarlar kaydedilirken bir sorun oluştu. Lütfen tekrar deneyin.</p>
+              <p className="mt-4 text-sm text-rose-600 dark:text-rose-400">Ayarlar kaydedilirken bir sorun oluştu. Lütfen tekrar deneyin.</p>
             )}
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
               <span>Bu adımı atlayabilirsiniz ancak e-posta fonksiyonu devre dışı kalır.</span>
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={handleSkipEmailConfig}
-                  className="rounded-xl border border-slate-600 px-4 py-2 font-semibold text-slate-200 transition-all duration-300 hover:border-amber-400 hover:text-amber-200"
+                  className="rounded-xl border border-slate-300 px-4 py-2 font-semibold text-slate-700 transition-all duration-300 hover:border-amber-400 hover:text-amber-600 dark:border-slate-600 dark:text-slate-200 dark:hover:border-amber-400 dark:hover:text-amber-200"
                 >
                   Daha Sonra
                 </button>
@@ -983,60 +983,60 @@ export function ChatPanel() {
           </div>
         </div>
       )}
-      {/* Animated Background - Dark Theme */}
-      <div className="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 -z-10"></div>
-      <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '700ms' }}></div>
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-fuchsia-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1000ms' }}></div>
+      {/* Animasyonlu Arka Plan */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"></div>
+      <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full blur-3xl bg-cyan-200/40 animate-pulse dark:bg-violet-500/20"></div>
+        <div className="absolute bottom-0 right-1/4 h-96 w-96 rounded-full blur-3xl bg-violet-200/40 animate-pulse" style={{ animationDelay: "700ms" }}></div>
+        <div className="absolute top-1/2 left-1/2 h-96 w-96 rounded-full blur-3xl bg-fuchsia-200/40 animate-pulse" style={{ animationDelay: "1000ms" }}></div>
       </div>
 
       <div className="relative flex flex-col gap-12">
         {emailBannerMessage && (
-          <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100 shadow-lg">
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-700 shadow-lg dark:border-amber-400/40 dark:bg-amber-500/10 dark:text-amber-100">
             <span>{emailBannerMessage}</span>
             <button
               type="button"
               onClick={() => setEmailBannerMessage(null)}
-              className="rounded-full border border-amber-300/40 px-3 py-1 text-xs font-semibold text-amber-100 transition-all duration-300 hover:border-amber-200 hover:text-amber-50"
+              className="rounded-full border border-amber-300 px-3 py-1 text-xs font-semibold text-amber-700 transition-all duration-300 hover:border-amber-400 hover:text-amber-900 dark:border-amber-300/40 dark:text-amber-100 dark:hover:border-amber-200 dark:hover:text-amber-50"
             >
               Kapat
             </button>
           </div>
         )}
-        {/* Main Chat Area */}
+        {/* Ana Sohbet Alanı */}
         <div className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 px-5 py-4 text-sm text-cyan-50 shadow-lg">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-cyan-300 bg-cyan-50 px-5 py-4 text-sm text-cyan-900 shadow-lg dark:border-cyan-400/30 dark:bg-cyan-500/10 dark:text-cyan-50">
             <div>
-              <p className="text-xs uppercase tracking-wide text-cyan-200/80">Assessed Participant</p>
-              <p className="text-lg font-semibold text-white">{participantInfo.fullName || "Awaiting information"}</p>
-              <p className="text-xs text-cyan-200/70">{participantInfo.email || "Email not provided yet"}</p>
-              <p className="text-xs text-cyan-200/70">
-                Report sharing consent: {participantInfo.shareReportConsent ? "Granted" : "Not granted"}
+              <p className="text-xs uppercase tracking-wide text-cyan-700 dark:text-cyan-200/80">Değerlendirilen Aday</p>
+              <p className="text-lg font-semibold text-cyan-900 dark:text-white">{participantInfo.fullName || "Bilgiler bekleniyor"}</p>
+              <p className="text-xs text-cyan-700/80 dark:text-cyan-200/70">{participantInfo.email || "E-posta henüz girilmedi"}</p>
+              <p className="text-xs text-cyan-700/80 dark:text-cyan-200/70">
+                Rapor paylaşım onayı: {participantInfo.shareReportConsent ? "Verildi" : "Bekleniyor"}
               </p>
             </div>
             <button
               type="button"
               onClick={() => setParticipantModalOpen(true)}
-              className="rounded-xl border border-cyan-300/60 px-4 py-2 text-xs font-semibold text-cyan-50 transition-all duration-300 hover:border-white hover:text-white"
+              className="rounded-xl border border-cyan-400 px-4 py-2 text-xs font-semibold text-cyan-800 transition-all duration-300 hover:border-cyan-500 hover:text-cyan-900 dark:border-cyan-300/60 dark:text-cyan-50 dark:hover:border-white dark:hover:text-white"
             >
-              Update Info
+              Bilgileri Güncelle
             </button>
           </div>
-          {/* Header Section */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center gap-3 mb-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 shadow-lg shadow-violet-500/50">
-                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          {/* Karşılama Bölümü */}
+          <div className="mb-8 text-center">
+            <div className="mb-4 inline-flex items-center gap-3">
+              <div className="rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 p-3 shadow-lg shadow-violet-500/50">
+                <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                 </svg>
               </div>
             </div>
-            <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-violet-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">
-              Interview Coach AI
+            <h1 className="mb-4 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-5xl font-bold text-transparent">
+              Mülakat Koçu Yapay Zekâ Asistanı
             </h1>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-              The entire experience runs in English so you can focus on fluency, clarity, and interview confidence.
+            <p className="mx-auto max-w-2xl text-lg text-slate-600 dark:text-slate-300">
+              Tüm yönlendirmeler Türkçe, konuşma egzersizleri ise İngilizce yapılır. Akıcı ve anlaşılır yanıtlar vermeniz için soruları yüksek sesle okuyabilir ve sesle yanıtlayabilirsiniz.
             </p>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <button
@@ -1046,7 +1046,7 @@ export function ChatPanel() {
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform duration-300 group-hover/btn:scale-110"></div>
                 <span className="relative text-white">
-                  {session ? "🔄 Restart English Session" : "▶️ Begin English Session"}
+                  {session ? "🔄 Oturumu Yeniden Başlat" : "▶️ Oturumu Başlat"}
                 </span>
               </button>
               <button
@@ -1055,46 +1055,46 @@ export function ChatPanel() {
                 className="group relative overflow-hidden rounded-xl px-6 py-4 text-lg font-semibold transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 transition-transform duration-300 group-hover:scale-110"></div>
-                <span className="relative text-white">⚡ Generate Interview Answer</span>
+                <span className="relative text-white">⚡ Örnek Mülakat Yanıtı Oluştur</span>
               </button>
             </div>
           </div>
 
-          {/* Voice Capture & Actions */}
+          {/* Ses Kaydı ve İşlemler */}
           <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative h-full rounded-2xl bg-white/5 p-4 backdrop-blur-xl border border-white/10 shadow-2xl">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-cyan-200">Voice Capture</h2>
-                <p className="mt-1 text-xs text-slate-300">
-                  Keep the microphone controls handy to capture your English responses without scrolling.
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 opacity-0 blur-lg transition-opacity duration-500 group-hover:opacity-100"></div>
+              <div className="relative h-full rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-xl">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-200">Sesli Yanıt Yakalama</h2>
+                <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                  Mikrofon kontrollerine buradan ulaşarak İngilizce yanıtlarınızı hızlıca kaydedin.
                 </p>
                 <div className="mt-4">
                   <ChatInput onSend={handleSend} disabled={!canChat || isLoading} mode={activeMode} />
                 </div>
                 {session && (
-                  <div className="mt-3 rounded-xl border border-slate-700/60 bg-slate-900/70 p-3 text-xs text-slate-200">
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 dark:border-slate-700/60 dark:bg-slate-900/70 dark:text-slate-200">
                     {audioError ? (
-                      <p className="text-amber-200">{audioError}</p>
+                      <p className="text-amber-600 dark:text-amber-200">{audioError}</p>
                     ) : isAudioRecording ? (
-                      <p>Interview audio is being recorded…</p>
+                      <p>Mülakat sesi kaydediliyor…</p>
                     ) : audioBlob ? (
-                      <p>Interview audio captured. It will be saved with the report.</p>
+                      <p>Mülakat sesi kaydedildi. Raporla birlikte saklanacak.</p>
                     ) : (
-                      <p>Preparing audio recorder…</p>
+                      <p>Ses kaydedici hazırlanıyor…</p>
                     )}
                     {uploadSessionAudio.isPending && (
-                      <p className="mt-1 text-slate-400">Ses kaydı yükleniyor…</p>
+                      <p className="mt-1 text-slate-500 dark:text-slate-400">Ses kaydı yükleniyor…</p>
                     )}
-                    {audioUploadInfo && <p className="mt-1 text-slate-400">{audioUploadInfo}</p>}
+                    {audioUploadInfo && <p className="mt-1 text-slate-500 dark:text-slate-400">{audioUploadInfo}</p>}
                   </div>
                 )}
               </div>
             </div>
-            <div className="flex flex-col justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl shadow-2xl">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-violet-200">Session Controls</h2>
-              <p className="text-xs text-slate-300">
-                Manage the flow of your English practice and unlock AI-powered feedback when you are ready.
+            <div className="flex flex-col justify-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-xl">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-200">Oturum Kontrolleri</h2>
+              <p className="text-xs text-slate-600 dark:text-slate-300">
+                İlerlemeyi buradan yönetebilir ve hazırsanız yapay zekâ değerlendirmesini başlatabilirsiniz.
               </p>
               <div className="flex flex-wrap gap-3">
                 <button
@@ -1103,44 +1103,44 @@ export function ChatPanel() {
                   className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
                 >
                   <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-blue-600 to-cyan-600'} transition-transform duration-300 group-hover:scale-110`}></div>
-                  <span className="relative">End Session</span>
+                  <span className="relative">Oturumu Sonlandır</span>
                 </button>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Görüşmeyi bitirdiğinizde değerlendirme, rapor oluşturma ve e-posta gönderimi otomatik olarak tamamlanır.
               </p>
               {evaluationInProgress && (
-                <p className="w-full rounded-xl border border-violet-500/40 bg-violet-500/10 px-4 py-3 text-xs font-medium text-violet-100 shadow-lg">
-                  LLM evaluation in progress. We will surface your scores as soon as the analysis is complete.
+                <p className="w-full rounded-xl border border-violet-300 bg-violet-50 px-4 py-3 text-xs font-medium text-violet-700 shadow-lg dark:border-violet-500/40 dark:bg-violet-500/10 dark:text-violet-100">
+                  Yapay zekâ değerlendirmesi devam ediyor. Analiz tamamlandığında puanlarınızı paylaşacağız.
                 </p>
               )}
               {generateReport.isPending && (
-                <p className="w-full rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-xs font-medium text-cyan-100 shadow-lg">
+                <p className="w-full rounded-xl border border-cyan-300 bg-cyan-50 px-4 py-3 text-xs font-medium text-cyan-700 shadow-lg dark:border-cyan-500/40 dark:bg-cyan-500/10 dark:text-cyan-100">
                   Rapor hazırlanıyor...
                 </p>
               )}
               {sendEmail.isPending && (
-                <p className="w-full rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-xs font-medium text-emerald-100 shadow-lg">
+                <p className="w-full rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-700 shadow-lg dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100">
                   Mail gönderiliyor...
                 </p>
               )}
             </div>
           </div>
 
-          {/* Chat Messages Container */}
+          {/* Sohbet Mesajları */}
           <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-violet-500/20 to-fuchsia-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden">
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-violet-300/40 to-fuchsia-300/40 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100 dark:from-violet-500/20 dark:to-fuchsia-500/20"></div>
+            <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-xl">
               <div className="h-[480px] overflow-y-auto p-6 custom-scrollbar">
                 {transcript.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center">
-                    <div className="inline-flex p-6 rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 mb-6">
-                      <svg className="w-16 h-16 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="mb-6 inline-flex rounded-full bg-gradient-to-br from-violet-400/30 to-fuchsia-400/30 p-6 dark:from-violet-500/20 dark:to-fuchsia-500/20">
+                      <svg className="h-16 w-16 text-violet-500 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                       </svg>
                     </div>
-                    <p className="text-slate-400 text-lg max-w-md">
-                      Start a session to begin the English-only conversation. Prompts will be spoken in English and you can reply aloud or by typing.
+                    <p className="max-w-md text-lg text-slate-600 dark:text-slate-400">
+                      Oturumu başlatarak İngilizce konuşma alıştırmasına geçebilirsiniz. Soruları yüksek sesle dinleyip mikrofonla yanıtlayabilir veya metin yazarak iletebilirsiniz.
                     </p>
                   </div>
                 ) : (
@@ -1154,20 +1154,20 @@ export function ChatPanel() {
             </div>
           </div>
 
-          {/* Session Summary */}
+          {/* Oturum Özeti */}
           {sessionSummary && (
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 to-cyan-500/30 rounded-2xl blur-lg"></div>
-              <div className="relative bg-white/5 backdrop-blur-xl rounded-2xl px-6 py-4 border border-white/10 shadow-xl">
-                <div className="flex items-center gap-6 text-sm font-semibold text-white">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-300/40 to-cyan-300/40 blur-lg dark:from-emerald-500/30 dark:to-cyan-500/30"></div>
+              <div className="relative rounded-2xl border border-emerald-200 bg-white px-6 py-4 shadow-xl dark:border-white/10 dark:bg-white/5 dark:backdrop-blur-xl">
+                <div className="flex items-center gap-6 text-sm font-semibold text-emerald-700 dark:text-white">
                   <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Words: {sessionSummary.word_count}
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
+                    Kelime Sayısı: {sessionSummary.word_count}
                   </span>
-                  <span className="text-slate-500">•</span>
+                  <span className="text-slate-400">•</span>
                   <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-                    Duration: {sessionSummary.duration_seconds}s
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-cyan-400"></span>
+                    Süre: {sessionSummary.duration_seconds}s
                   </span>
                 </div>
               </div>
@@ -1179,16 +1179,16 @@ export function ChatPanel() {
             <div className="flex flex-col gap-2">
               <a
                 href={reportUrl}
-                className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-violet-500/50"
+                className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 font-semibold text-white transition-all duration-300 hover:scale-105 hover:from-violet-500 hover:to-fuchsia-500 hover:shadow-violet-500/50 shadow-lg"
                 target="_blank"
                 rel="noreferrer"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                View Generated Report
+                Raporu Görüntüle
               </a>
-              <p className="text-xs text-slate-400">Bağlantı 15 dakika içinde sona erer.</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Bağlantı 15 dakika içinde sona erer.</p>
             </div>
           )}
           {emailFeedback && (
@@ -1202,23 +1202,23 @@ export function ChatPanel() {
         <div className="space-y-6">
           {evaluation ? (
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-500/30 to-fuchsia-500/30 rounded-3xl blur-2xl opacity-40"></div>
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-violet-400/40 to-fuchsia-400/40 blur-2xl opacity-40 dark:from-violet-500/30 dark:to-fuchsia-500/30"></div>
               <div className="relative">
                 <ScoreCard evaluation={evaluation} />
               </div>
             </div>
           ) : (
             <div className="relative group">
-              <div className="absolute inset-0 bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative bg-white/5 backdrop-blur-xl rounded-3xl border-2 border-dashed border-white/20 p-10 text-center shadow-2xl">
-                <div className="inline-flex p-6 rounded-full bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 mb-6">
-                  <svg className="w-14 h-14 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-violet-300/30 to-fuchsia-300/30 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100 dark:from-violet-500/20 dark:to-fuchsia-500/20"></div>
+              <div className="relative rounded-3xl border-2 border-dashed border-slate-300 bg-white p-10 text-center shadow-2xl dark:border-white/20 dark:bg-white/5 dark:backdrop-blur-xl">
+                <div className="mb-6 inline-flex rounded-full bg-gradient-to-br from-violet-400/30 to-fuchsia-400/30 p-6 dark:from-violet-500/20 dark:to-fuchsia-500/20">
+                  <svg className="h-14 w-14 text-violet-500 dark:text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-3">AI Feedback</h3>
-                <p className="text-slate-400 leading-relaxed">
-                  Run an evaluation to unlock TOEFL-style scoring, CEFR levels, and tailored action plans.
+                <h3 className="mb-3 text-xl font-semibold text-slate-800 dark:text-white">Yapay Zekâ Geri Bildirimi</h3>
+                <p className="leading-relaxed text-slate-600 dark:text-slate-300">
+                  Değerlendirmeyi başlatarak TOEFL tarzı puanlama, CEFR seviyeleri ve kişiselleştirilmiş gelişim önerilerine ulaşabilirsiniz.
                 </p>
               </div>
             </div>
