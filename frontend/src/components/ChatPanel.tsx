@@ -451,149 +451,159 @@ export function ChatPanel() {
 
   const handleFinish = async () => {
     if (!session?.session_id || blockingForConfig) return;
-    await stopAudioCapture();
-    const summary = await finishSession.mutateAsync({ session_id: session.session_id });
-    setSessionSummary(summary);
-  };
-
-  const handleEvaluate = async () => {
-    if (!session?.session_id || blockingForConfig) return;
-    const result = await evaluateSession.mutateAsync({ session_id: session.session_id });
-    setEvaluation(result);
-  };
-
-  const handleReport = async () => {
-    if (!evaluation || !sessionSummary) return;
     if (!ensureParticipantInfo()) return;
 
-    const participant = {
-      full_name: participantInfo.fullName.trim(),
-      email: participantInfo.email.trim(),
-      share_report_consent: participantInfo.shareReportConsent,
-      share_report_consent_granted_at: participantInfo.shareReportConsentGrantedAt,
-    };
-    const metadata = {
-      session_id: evaluation.session.id,
-      started_at: session?.started_at,
-      duration_seconds: sessionSummary.duration_seconds,
-      word_count: sessionSummary.word_count,
-      summary: sessionSummary.summary,
-      participant,
-      report_generated_at: new Date().toISOString(),
-    };
-    const report = await generateReport.mutateAsync({ evaluation, session_metadata: metadata });
-    setReportUrl(report.report_url);
+    const sessionId = session.session_id;
+    const sessionStartedAt = session.started_at;
+
     setEmailFeedback(null);
+    setAudioUploadInfo(null);
 
-    if (session?.session_id) {
+    try {
       await stopAudioCapture();
-      if (audioBlob) {
-        try {
-          const encoded = await encodeBlobToBase64(audioBlob);
-          const audioResult = await uploadSessionAudio.mutateAsync({
-            session_id: session.session_id,
-            audio_base64: encoded,
-            mime_type: audioMimeType ?? audioBlob.type,
-            report_date: metadata.report_generated_at,
-          });
-          setAudioUploadInfo(`Ses kaydı kaydedildi: ${audioResult.filename}`);
-        } catch (error) {
-          console.error("Failed to upload session audio", error);
-          setAudioUploadInfo("Ses kaydı kaydedilemedi.");
+      const summary = await finishSession.mutateAsync({ session_id: sessionId });
+      setSessionSummary(summary);
+
+      setEmailFeedback({ type: "info", message: "Değerlendirme başlatılıyor..." });
+      const evaluationResult = await evaluateSession.mutateAsync({ session_id: sessionId });
+      setEvaluation(evaluationResult);
+
+      const participant = {
+        full_name: participantInfo.fullName.trim(),
+        email: participantInfo.email.trim(),
+        share_report_consent: participantInfo.shareReportConsent,
+        share_report_consent_granted_at: participantInfo.shareReportConsentGrantedAt,
+      };
+
+      setEmailFeedback({ type: "info", message: "Rapor hazırlanıyor..." });
+      const metadata = {
+        session_id: evaluationResult.session.id,
+        started_at: sessionStartedAt,
+        duration_seconds: summary.duration_seconds,
+        word_count: summary.word_count,
+        summary: summary.summary,
+        participant,
+        report_generated_at: new Date().toISOString(),
+      };
+      const report = await generateReport.mutateAsync({ evaluation: evaluationResult, session_metadata: metadata });
+      setReportUrl(report.report_url);
+
+      if (sessionId) {
+        if (audioBlob) {
+          try {
+            const encoded = await encodeBlobToBase64(audioBlob);
+            const audioResult = await uploadSessionAudio.mutateAsync({
+              session_id: sessionId,
+              audio_base64: encoded,
+              mime_type: audioMimeType ?? audioBlob.type,
+              report_date: metadata.report_generated_at,
+            });
+            setAudioUploadInfo(`Ses kaydı kaydedildi: ${audioResult.filename}`);
+          } catch (error) {
+            console.error("Failed to upload session audio", error);
+            setAudioUploadInfo("Ses kaydı kaydedilemedi.");
+          }
+        } else {
+          setAudioUploadInfo("Ses kaydı yakalanamadı.");
         }
-      } else {
-        setAudioUploadInfo("Ses kaydı yakalanamadı.");
       }
-    }
 
-    if (!participantInfo.shareReportConsent) {
+      if (!participantInfo.shareReportConsent) {
+        setEmailFeedback({
+          type: "warning",
+          message: "Katılımcı raporun e-posta ile paylaşılmasına izin vermediği için e-posta gönderilmedi.",
+        });
+        return;
+      }
+
+      const configuredRecipient = emailStatusQuery.data?.target_email?.trim();
+      const fallbackRecipient = participantInfo.email.trim();
+      const recipientEmail = configuredRecipient || fallbackRecipient;
+
+      if (!recipientEmail) {
+        setEmailFeedback({
+          type: "error",
+          message: "Geçerli bir alıcı e-posta adresi bulunamadı.",
+        });
+        return;
+      }
+
+      if (!emailStatusQuery.data?.configured) {
+        setEmailFeedback({
+          type: "warning",
+          message: "E-posta ayarları yapılandırılmadığı için rapor gönderilemedi.",
+        });
+        return;
+      }
+
       setEmailFeedback({
-        type: "warning",
-        message: "Katılımcı raporun e-posta ile paylaşılmasına izin vermediği için e-posta gönderilmedi.",
+        type: "info",
+        message: "Rapor başarıyla oluşturuldu. Mail hazırlanıyor...",
       });
-      return;
-    }
 
-    const configuredRecipient = emailStatusQuery.data?.target_email?.trim();
-    const fallbackRecipient = participantInfo.email.trim();
-    const recipientEmail = configuredRecipient || fallbackRecipient;
+      const reportAttachments: EmailAttachmentPayload[] = [];
+      try {
+        const reportFilename = evaluationResult.session.id
+          ? `assessment_report_${evaluationResult.session.id}.html`
+          : "assessment_report.html";
+        const encodedReport = encodeStringToBase64(report.html);
+        reportAttachments.push({
+          filename: reportFilename,
+          content_type: "text/html",
+          data: encodedReport,
+        });
+      } catch (error) {
+        console.error("Failed to prepare report attachment", error);
+        setEmailFeedback({
+          type: "error",
+          message: "Rapor e-posta eki hazırlanırken bir hata oluştu.",
+        });
+        return;
+      }
 
-    if (!recipientEmail) {
       setEmailFeedback({
-        type: "error",
-        message: "Geçerli bir alıcı e-posta adresi bulunamadı.",
+        type: "info",
+        message: "Mail gönderiliyor...",
       });
-      return;
-    }
 
-    if (!emailStatusQuery.data?.configured) {
-      setEmailFeedback({
-        type: "warning",
-        message: "E-posta ayarları yapılandırılmadığı için rapor gönderilemedi.",
-      });
-      return;
-    }
+      const subject = `${participant.full_name}- Assessment`;
+      const body = [
+        "Merhaba,",
+        "",
+        `Yeni oluşturulan dil değerlendirme raporu ${participant.full_name} (${participant.email}) tarafından oluşturulan değerlendirmeye aittir.`,
+        "Detaylı rapora aşağıdaki bağlantıdan ulaşabilirsiniz:",
+        report.report_url,
+        "Bu bağlantı güvenlik nedeniyle 15 dakika içinde sona erecektir.",
+        "",
+        "Bu mesaj sistem tarafından otomatik gönderilmiştir.",
+      ].join("\n");
 
-    setEmailFeedback({
-      type: "info",
-      message: "Rapor başarıyla oluşturuldu. Mail hazırlanıyor...",
-    });
-
-    const reportAttachments: EmailAttachmentPayload[] = [];
-    try {
-      const reportFilename = evaluation.session.id
-        ? `assessment_report_${evaluation.session.id}.html`
-        : "assessment_report.html";
-      const encodedReport = encodeStringToBase64(report.html);
-      reportAttachments.push({
-        filename: reportFilename,
-        content_type: "text/html",
-        data: encodedReport,
-      });
+      try {
+        await sendEmail.mutateAsync({
+          to: recipientEmail,
+          subject,
+          body,
+          links: [report.report_url],
+          session_id: sessionId,
+          attachments: reportAttachments,
+        });
+        setEmailFeedback({
+          type: "success",
+          message: `Mail ${recipientEmail} adresine başarıyla gönderildi.`,
+        });
+      } catch (error) {
+        console.error("Failed to send report email", error);
+        setEmailFeedback({
+          type: "error",
+          message: "Rapor e-posta ile gönderilemedi. Lütfen e-posta ayarlarını kontrol edin.",
+        });
+        return;
+      }
     } catch (error) {
-      console.error("Failed to prepare report attachment", error);
+      console.error("Failed to finalize interview workflow", error);
       setEmailFeedback({
         type: "error",
-        message: "Rapor e-posta eki hazırlanırken bir hata oluştu.",
-      });
-      return;
-    }
-
-    setEmailFeedback({
-      type: "info",
-      message: "Mail gönderiliyor...",
-    });
-
-    const subject = `${participant.full_name}- Assessment`;
-    const body = [
-      "Merhaba,",
-      "",
-      `Yeni oluşturulan dil değerlendirme raporu ${participant.full_name} (${participant.email}) tarafından oluşturulan değerlendirmeye aittir.`,
-      "Detaylı rapora aşağıdaki bağlantıdan ulaşabilirsiniz:",
-      report.report_url,
-      "Bu bağlantı güvenlik nedeniyle 15 dakika içinde sona erecektir.",
-      "",
-      "Bu mesaj sistem tarafından otomatik gönderilmiştir.",
-    ].join("\n");
-
-    try {
-      await sendEmail.mutateAsync({
-        to: recipientEmail,
-        subject,
-        body,
-        links: [report.report_url],
-        session_id: session?.session_id,
-        attachments: reportAttachments,
-      });
-      setEmailFeedback({
-        type: "success",
-        message: `Mail ${recipientEmail} adresine başarıyla gönderildi.`,
-      });
-    } catch (error) {
-      console.error("Failed to send report email", error);
-      setEmailFeedback({
-        type: "error",
-        message: "Rapor e-posta ile gönderilemedi. Lütfen e-posta ayarlarını kontrol edin.",
+        message: "Oturum sonlandırılırken beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
       });
     }
   };
@@ -607,6 +617,7 @@ export function ChatPanel() {
       finishSession.isPending ||
       evaluationInProgress ||
       generateReport.isPending ||
+      sendEmail.isPending ||
       configureGpt5.isPending,
     [
       startSession.isPending,
@@ -614,6 +625,7 @@ export function ChatPanel() {
       finishSession.isPending,
       evaluationInProgress,
       generateReport.isPending,
+      sendEmail.isPending,
       configureGpt5.isPending,
     ]
   );
@@ -722,7 +734,7 @@ export function ChatPanel() {
           <div className="flex min-h-full items-center justify-center px-4 py-10">
             <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-cyan-500/40 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
               <h2 className="text-2xl font-bold">Please enter your information</h2>
-              <p className="mt-2 text-sm text-slate-300">Please enter your information.</p>
+              <p className="mt-2 text-sm text-slate-300">Please enter your information. Görüşmeye başlamadan önce mikrofonunuzun açık olduğundan emin olun.</p>
               <div className="mt-5 space-y-3 rounded-2xl border border-cyan-500/20 bg-slate-900/60 p-4 text-left">
                 <h3 className="text-base font-semibold text-cyan-200">Aydınlatma Metni</h3>
                 <p className="text-sm text-slate-300">
@@ -1093,38 +1105,23 @@ export function ChatPanel() {
                   <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-blue-600 to-cyan-600'} transition-transform duration-300 group-hover:scale-110`}></div>
                   <span className="relative">End Session</span>
                 </button>
-                <button
-                  onClick={handleEvaluate}
-                  disabled={!session || isLoading || blockingForConfig}
-                  className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
-                >
-                  <div className={`absolute inset-0 ${!session || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-violet-600 to-fuchsia-600'} transition-transform duration-300 group-hover:scale-110`}></div>
-                  <span className="relative flex items-center gap-2">
-                    {evaluationInProgress && (
-                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/60 border-t-transparent"></span>
-                    )}
-                    {evaluationInProgress ? "Evaluating…" : "Get Evaluation"}
-                  </span>
-                </button>
-                <button
-                  onClick={handleReport}
-                  disabled={!evaluation || !sessionSummary || isLoading || blockingForConfig}
-                  title={
-                    !evaluation
-                      ? "Run an evaluation to unlock the detailed report."
-                      : !sessionSummary
-                        ? "End the session to compile the summary before generating the report."
-                        : undefined
-                  }
-                  className="group relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-lg"
-                >
-                  <div className={`absolute inset-0 ${!evaluation || !sessionSummary || isLoading ? 'bg-slate-700' : 'bg-gradient-to-r from-orange-600 to-red-600'} transition-transform duration-300 group-hover:scale-110`}></div>
-                  <span className="relative">Generate Report</span>
-                </button>
               </div>
+              <p className="text-xs text-slate-400">
+                Görüşmeyi bitirdiğinizde değerlendirme, rapor oluşturma ve e-posta gönderimi otomatik olarak tamamlanır.
+              </p>
               {evaluationInProgress && (
                 <p className="w-full rounded-xl border border-violet-500/40 bg-violet-500/10 px-4 py-3 text-xs font-medium text-violet-100 shadow-lg">
                   LLM evaluation in progress. We will surface your scores as soon as the analysis is complete.
+                </p>
+              )}
+              {generateReport.isPending && (
+                <p className="w-full rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-xs font-medium text-cyan-100 shadow-lg">
+                  Rapor hazırlanıyor...
+                </p>
+              )}
+              {sendEmail.isPending && (
+                <p className="w-full rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-xs font-medium text-emerald-100 shadow-lg">
+                  Mail gönderiliyor...
                 </p>
               )}
             </div>
