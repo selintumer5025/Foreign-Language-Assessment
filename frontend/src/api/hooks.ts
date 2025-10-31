@@ -11,6 +11,8 @@ import type {
   EmailResponsePayload,
   Gpt5Status,
   ReportResponse,
+  SessionAudioUploadRequest,
+  SessionAudioUploadResponse,
   SessionFinishResponse,
   SessionStartRequest,
   SessionStartResponse,
@@ -164,6 +166,15 @@ export function useSendEmail() {
   return useMutation({
     mutationFn: async (payload: EmailRequestPayload) => {
       const { data } = await api.post<EmailResponsePayload>("/api/email", payload);
+      return data;
+    }
+  });
+}
+
+export function useUploadSessionAudio() {
+  return useMutation({
+    mutationFn: async (payload: SessionAudioUploadRequest) => {
+      const { data } = await api.post<SessionAudioUploadResponse>("/api/session/audio", payload);
       return data;
     }
   });

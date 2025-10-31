@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import List
@@ -15,16 +17,19 @@ from .models import (
     ChatRequest,
     ChatResponse,
     DualEvaluationResponse,
-    GPT5KeyRequest,
-    GPT5KeyStatus,
-    EmailRequest,
-    EmailResponse,
+    EmailAttachment,
     EmailConfigStatus,
     EmailConfigUpdateRequest,
+    EmailRequest,
+    EmailResponse,
     EmailSettingsPublic,
     EvaluationRequest,
+    GPT5KeyRequest,
+    GPT5KeyStatus,
     ReportRequest,
     ReportResponse,
+    SessionAudioUploadRequest,
+    SessionAudioUploadResponse,
     SessionFinishRequest,
     SessionFinishResponse,
     SessionStartRequest,
@@ -36,10 +41,12 @@ from .services.evaluation import evaluate_transcript
 from .services.gpt5_client import clear_gpt5_client_cache
 from .services.emailer import send_email
 from .services.reporting import persist_report, resolve_report_token
+from .services.audio import store_session_audio
 from .services.session_store import get_store
 
 app = FastAPI(title="Foreign Language Assessment API", version="0.1.0")
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 app.add_middleware(
     CORSMiddleware,
@@ -110,6 +117,16 @@ def chat(payload: ChatRequest, _: str = Depends(get_current_token)) -> ChatRespo
     session.add_message(ChatMessage(role="assistant", content=assistant_reply))
     turn_count = store.increment_turn(session.session_id)
     return ChatResponse(assistant_message=assistant_reply, turns_completed=turn_count, mode=session.mode)
+
+
+@app.post("/api/session/audio", response_model=SessionAudioUploadResponse, tags=["session"])
+def upload_session_audio(payload: SessionAudioUploadRequest, _: str = Depends(get_current_token)) -> SessionAudioUploadResponse:
+    filename, stored_path = store_session_audio(payload)
+    return SessionAudioUploadResponse(
+        filename=filename,
+        stored_path=str(stored_path),
+        content_type="audio/mpeg",
+    )
 
 
 @app.post("/api/session/finish", response_model=SessionFinishResponse, tags=["session"])
@@ -188,7 +205,34 @@ def download_report(token: str) -> FileResponse:
 
 @app.post("/api/email", response_model=EmailResponse, tags=["email"])
 def send_report_email(payload: EmailRequest, _: str = Depends(get_current_token)) -> EmailResponse:
-    return send_email(payload)
+    attachments: List[EmailAttachment] = list(payload.attachments or [])
+
+    if payload.session_id:
+        store = get_store()
+        try:
+            session = store.get(payload.session_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found") from exc
+
+        audio_path = getattr(session, "audio_recording_path", None)
+        if audio_path and Path(audio_path).exists():
+            already_attached = {attachment.filename for attachment in attachments}
+            if audio_path.name not in already_attached:
+                try:
+                    audio_bytes = Path(audio_path).read_bytes()
+                    encoded = base64.b64encode(audio_bytes).decode("ascii")
+                    attachments.append(
+                        EmailAttachment(
+                            filename=audio_path.name,
+                            content_type="audio/mpeg",
+                            data=encoded,
+                        )
+                    )
+                except OSError as exc:  # pragma: no cover - filesystem error
+                    logger.warning("Unable to attach audio recording for session %s: %s", session.session_id, exc)
+
+    updated_payload = payload.model_copy(update={"attachments": attachments})
+    return send_email(updated_payload)
 
 
 @app.get("/api/config/email", response_model=EmailConfigStatus, tags=["config"])

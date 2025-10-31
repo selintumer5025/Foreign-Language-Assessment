@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from ..models import ChatMessage, InteractionMode
@@ -29,6 +30,8 @@ class SessionData:
         self.question_plan: List[str] = []
         self.consent_granted = consent_granted
         self.consent_granted_at = consent_granted_at or (datetime.utcnow() if consent_granted else None)
+        self.audio_recording_path: Path | None = None
+        self.audio_recorded_at: Optional[datetime] = None
 
     @property
     def duration_seconds(self) -> int:

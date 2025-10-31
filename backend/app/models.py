@@ -139,17 +139,37 @@ class ReportResponse(BaseModel):
     html: str
 
 
+class EmailAttachment(BaseModel):
+    filename: str
+    content_type: str
+    data: str
+
+
 class EmailRequest(BaseModel):
     to: EmailStr
     subject: str
     body: str
-    attachments: Optional[List[dict]] = None
+    attachments: Optional[List[EmailAttachment]] = None
     links: Optional[List[str]] = None
+    session_id: Optional[str] = None
 
 
 class EmailResponse(BaseModel):
     status: str
     message_id: str
+
+
+class SessionAudioUploadRequest(BaseModel):
+    session_id: str
+    audio_base64: str
+    mime_type: Optional[str] = None
+    report_date: Optional[str] = None
+
+
+class SessionAudioUploadResponse(BaseModel):
+    filename: str
+    stored_path: str
+    content_type: str
 
 
 class ErrorResponse(BaseModel):

@@ -1,4 +1,4 @@
-import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   useChat,
   useConfigureGpt5,
@@ -12,6 +12,7 @@ import {
   useGpt5Status,
   useStartSession,
   useTranscript,
+  useUploadSessionAudio,
 } from "../api/hooks";
 import { ChatInput } from "./ChatInput";
 import { MessageBubble } from "./MessageBubble";
@@ -56,6 +57,7 @@ export function ChatPanel() {
   const emailStatusQuery = useEmailStatus();
   const configureEmail = useConfigureEmail();
   const sendEmail = useSendEmail();
+  const uploadSessionAudio = useUploadSessionAudio();
   const gpt5StatusQuery = useGpt5Status();
   const configureGpt5 = useConfigureGpt5();
   const [evaluation, setEvaluation] = useState<DualEvaluationResponse | null>(null);
@@ -92,6 +94,16 @@ export function ChatPanel() {
     shareReportConsentGrantedAt: null,
   });
   const [autoResponseIndex, setAutoResponseIndex] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const audioStopPromiseRef = useRef<Promise<void> | null>(null);
+  const audioStopResolverRef = useRef<(() => void) | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioMimeType, setAudioMimeType] = useState<string | null>(null);
+  const [isAudioRecording, setIsAudioRecording] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
+  const [audioUploadInfo, setAudioUploadInfo] = useState<string | null>(null);
   const emailFeedbackClass = useMemo(() => {
     if (!emailFeedback) return "";
     switch (emailFeedback.type) {
@@ -113,6 +125,156 @@ export function ChatPanel() {
     participantInfo.fullName.trim().length > 0 &&
     participantInfo.email.trim().length > 0 &&
     participantInfo.consentGranted;
+
+  const getPreferredAudioMimeType = useCallback((): string => {
+    if (typeof window === "undefined" || typeof MediaRecorder === "undefined") {
+      return "";
+    }
+    const candidates = ["audio/mpeg", "audio/mp3", "audio/webm;codecs=opus", "audio/webm"];
+    for (const type of candidates) {
+      try {
+        if ((MediaRecorder as any).isTypeSupported?.(type)) {
+          return type;
+        }
+        if (typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(type)) {
+          return type;
+        }
+      } catch {
+        // Ignore unsupported type errors
+      }
+    }
+    return "";
+  }, []);
+
+  const stopAudioCapture = useCallback((): Promise<void> => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      audioStopPromiseRef.current = new Promise<void>((resolve) => {
+        audioStopResolverRef.current = resolve;
+      });
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (error) {
+        console.error("Failed to stop audio recorder", error);
+        audioStopResolverRef.current?.();
+        audioStopResolverRef.current = null;
+        audioStopPromiseRef.current = null;
+      }
+      return audioStopPromiseRef.current ?? Promise.resolve();
+    }
+    if (audioStreamRef.current) {
+      audioStreamRef.current.getTracks().forEach((track) => track.stop());
+      audioStreamRef.current = null;
+    }
+    return Promise.resolve();
+  }, []);
+
+  const encodeBlobToBase64 = useCallback(async (blob: Blob): Promise<string> => {
+    const buffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode(...chunk);
+    }
+    return btoa(binary);
+  }, []);
+
+  useEffect(() => {
+    if (!session?.session_id) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const startRecording = async () => {
+      if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+        setAudioError("Bu tarayıcıda ses kaydı desteklenmiyor.");
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        const preferredMimeType = getPreferredAudioMimeType();
+        let recorder: MediaRecorder | null = null;
+        try {
+          recorder = preferredMimeType
+            ? new MediaRecorder(stream, { mimeType: preferredMimeType })
+            : new MediaRecorder(stream);
+        } catch (error) {
+          console.warn("Falling back to default MediaRecorder configuration", error);
+          recorder = new MediaRecorder(stream);
+        }
+
+        mediaRecorderRef.current = recorder;
+        audioStreamRef.current = stream;
+        audioChunksRef.current = [];
+        setAudioBlob(null);
+        setAudioUploadInfo(null);
+        setAudioError(null);
+        setIsAudioRecording(true);
+        setAudioMimeType(preferredMimeType || recorder.mimeType || null);
+
+        recorder.ondataavailable = (event: BlobEvent) => {
+          if (event.data && event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+        recorder.onerror = (event) => {
+          console.error("Audio recorder error", event);
+          setAudioError("Ses kaydı sırasında bir hata oluştu.");
+        };
+        recorder.onstop = () => {
+          setIsAudioRecording(false);
+          const effectiveMime =
+            preferredMimeType || recorder.mimeType || audioChunksRef.current[0]?.type || "audio/webm";
+          const blob = new Blob(audioChunksRef.current, { type: effectiveMime });
+          setAudioBlob(blob);
+          setAudioMimeType(effectiveMime);
+          audioChunksRef.current = [];
+          if (audioStreamRef.current) {
+            audioStreamRef.current.getTracks().forEach((track) => track.stop());
+            audioStreamRef.current = null;
+          }
+          mediaRecorderRef.current = null;
+          audioStopResolverRef.current?.();
+          audioStopResolverRef.current = null;
+          audioStopPromiseRef.current = null;
+        };
+
+        recorder.start();
+      } catch (error) {
+        console.error("Failed to start audio recording", error);
+        setAudioError("Mikrofon erişimi alınamadı veya MediaRecorder desteklenmiyor.");
+      }
+    };
+
+    startRecording();
+
+    return () => {
+      cancelled = true;
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch (error) {
+          console.error("Failed to stop audio recorder during cleanup", error);
+        }
+      }
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((track) => track.stop());
+        audioStreamRef.current = null;
+      }
+      mediaRecorderRef.current = null;
+      audioChunksRef.current = [];
+      audioStopResolverRef.current = null;
+      audioStopPromiseRef.current = null;
+    };
+  }, [session?.session_id, getPreferredAudioMimeType]);
 
   useEffect(() => {
     if (!participantModalOpen) return;
@@ -207,6 +369,11 @@ export function ChatPanel() {
     setSessionSummary(null);
     setReportUrl(null);
     setEmailFeedback(null);
+    void stopAudioCapture();
+    setAudioBlob(null);
+    setAudioUploadInfo(null);
+    setAudioError(null);
+    setIsAudioRecording(false);
   };
 
   const ensureParticipantInfo = () => {
@@ -266,6 +433,7 @@ export function ChatPanel() {
 
   const handleFinish = async () => {
     if (!session?.session_id || blockingForConfig) return;
+    await stopAudioCapture();
     const summary = await finishSession.mutateAsync({ session_id: session.session_id });
     setSessionSummary(summary);
   };
@@ -298,6 +466,27 @@ export function ChatPanel() {
     const report = await generateReport.mutateAsync({ evaluation, session_metadata: metadata });
     setReportUrl(report.report_url);
     setEmailFeedback(null);
+
+    if (session?.session_id) {
+      await stopAudioCapture();
+      if (audioBlob) {
+        try {
+          const encoded = await encodeBlobToBase64(audioBlob);
+          const audioResult = await uploadSessionAudio.mutateAsync({
+            session_id: session.session_id,
+            audio_base64: encoded,
+            mime_type: audioMimeType ?? audioBlob.type,
+            report_date: metadata.report_generated_at,
+          });
+          setAudioUploadInfo(`Ses kaydı kaydedildi: ${audioResult.filename}`);
+        } catch (error) {
+          console.error("Failed to upload session audio", error);
+          setAudioUploadInfo("Ses kaydı kaydedilemedi.");
+        }
+      } else {
+        setAudioUploadInfo("Ses kaydı yakalanamadı.");
+      }
+    }
 
     if (!participantInfo.shareReportConsent) {
       setEmailFeedback({
@@ -345,6 +534,7 @@ export function ChatPanel() {
         subject,
         body,
         links: [report.report_url],
+        session_id: session?.session_id,
       });
       setEmailFeedback({
         type: "success",
@@ -821,6 +1011,23 @@ export function ChatPanel() {
                 <div className="mt-4">
                   <ChatInput onSend={handleSend} disabled={!canChat || isLoading} mode={activeMode} />
                 </div>
+                {session && (
+                  <div className="mt-3 rounded-xl border border-slate-700/60 bg-slate-900/70 p-3 text-xs text-slate-200">
+                    {audioError ? (
+                      <p className="text-amber-200">{audioError}</p>
+                    ) : isAudioRecording ? (
+                      <p>Interview audio is being recorded…</p>
+                    ) : audioBlob ? (
+                      <p>Interview audio captured. It will be saved with the report.</p>
+                    ) : (
+                      <p>Preparing audio recorder…</p>
+                    )}
+                    {uploadSessionAudio.isPending && (
+                      <p className="mt-1 text-slate-400">Ses kaydı yükleniyor…</p>
+                    )}
+                    {audioUploadInfo && <p className="mt-1 text-slate-400">{audioUploadInfo}</p>}
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex flex-col justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl shadow-2xl">
