@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import type { InteractionMode } from "../types";
 
+type SpeechRecognitionAlternativeLike = {
+  transcript?: string;
+};
+
+type SpeechRecognitionResultLike = {
+  [index: number]: SpeechRecognitionAlternativeLike | undefined;
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+};
+
 interface ChatInputProps {
   disabled?: boolean;
   mode: InteractionMode;
@@ -79,14 +92,28 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
     recognition.onerror = () => {
       setIsRecording(false);
     };
-    recognition.onresult = (event: any) => {
-      const transcript = event?.results?.[0]?.[0]?.transcript ?? "";
-      const normalized = transcript.trim();
-      if (!normalized) {
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
+      const freshSegments: string[] = [];
+
+      for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        const result = event.results[i];
+        const transcript = result?.[0]?.transcript ?? "";
+        const normalized = transcript.trim();
+        if (!normalized) continue;
+
+        freshSegments.push(normalized);
+      }
+
+      if (freshSegments.length === 0) {
         return;
       }
 
-      captureBufferRef.current = `${captureBufferRef.current} ${normalized}`.trim();
+      const combined = freshSegments.join(" ").trim();
+      if (!combined) {
+        return;
+      }
+
+      captureBufferRef.current = `${captureBufferRef.current} ${combined}`.trim();
     };
 
     recognitionRef.current = recognition;
