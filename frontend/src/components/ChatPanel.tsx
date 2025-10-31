@@ -1033,7 +1033,7 @@ export function ChatPanel() {
               </div>
             </div>
             <h1 className="mb-4 bg-gradient-to-r from-violet-500 via-fuchsia-500 to-cyan-500 bg-clip-text text-5xl font-bold text-transparent">
-              Mülakat Koçu Yapay Zekâ Asistanı
+              Yapay Zeka Destekli İngilizce Konuşma Değerlendirmesi
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-slate-600 dark:text-slate-300">
               <span className="block">Tüm yönlendirmeler Türkçe, konuşma egzersizleri ise İngilizce yapılır.</span>
