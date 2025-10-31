@@ -8,6 +8,23 @@ import os
 ENV_FILE_PATH = Path(__file__).resolve().parents[2] / ".env"
 
 
+DEFAULT_ENV_VALUES: dict[str, str] = {
+    "APP_SECRET_TOKEN": "change-me-secret",
+    "APP_BASE_URL": "https://your-app.onrender.com",
+    "TARGET_EMAIL": "demo@example.com",
+    "REPORT_LANGUAGE": "en",
+    "STORE_TRANSCRIPTS": "true",
+    "EMAIL_PROVIDER": "smtp",
+    "SMTP_HOST": "",
+    "SMTP_PORT": "587",
+    "SMTP_USERNAME": "",
+    "SMTP_PASSWORD": "",
+    "EMAIL_DEFAULT_SENDER": "coach@example.com",
+    "SENDGRID_API_KEY": "",
+    "DEFAULT_INTERVIEW_STANDARD": "toefl",
+}
+
+
 def _load_env_file() -> None:
     if not ENV_FILE_PATH.exists():
         return
@@ -54,6 +71,14 @@ def _persist_env_var(key: str, value: str) -> None:
 
 
 _load_env_file()
+
+
+def _apply_default_env_values() -> None:
+    for key, value in DEFAULT_ENV_VALUES.items():
+        os.environ.setdefault(key, value)
+
+
+_apply_default_env_values()
 
 
 class EmailSettings(BaseModel):

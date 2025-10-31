@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import random
 import re
 from functools import lru_cache
@@ -9,9 +8,10 @@ from pathlib import Path
 from typing import List
 
 from ..models import ChatMessage
+from ..config import DEFAULT_ENV_VALUES
 
 QUESTIONS_PER_SESSION = 5
-DEFAULT_STANDARD = os.getenv("DEFAULT_INTERVIEW_STANDARD", "toefl")
+DEFAULT_STANDARD = DEFAULT_ENV_VALUES["DEFAULT_INTERVIEW_STANDARD"]
 CONFIG_ROOT = Path(__file__).resolve().parents[3] / "configs"
 CUSTOM_QUESTION_DIRS = (
     Path(__file__).resolve().parents[3] / "sorular",
