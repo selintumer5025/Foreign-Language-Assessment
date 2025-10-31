@@ -22,6 +22,19 @@ import type {
   InteractionMode,
   SessionFinishResponse
 } from "../types";
+
+type ParticipantFormState = {
+  fullName: string;
+  email: string;
+  consent: boolean;
+};
+
+type ParticipantInfoState = {
+  fullName: string;
+  email: string;
+  consentGranted: boolean;
+  consentGrantedAt: string | null;
+};
 const SAMPLE_RESPONSES = [
   "Certainly! One experience that stands out is when our team had to deliver a new feature under a strict deadline. I coordinated the project timeline, clarified ownership, and hosted daily check-ins to surface blockers quickly. As a result, we shipped on time and the customer adoption rate exceeded expectations.",
   "I would describe my communication style as clear and empathetic. Whether I'm working with stakeholders or mentoring teammates, I aim to translate complex ideas into actionable next steps while making space for questions and feedback.",
@@ -61,8 +74,17 @@ export function ChatPanel() {
   const [emailBannerMessage, setEmailBannerMessage] = useState<string | null>(null);
   const [emailFeedback, setEmailFeedback] = useState<{ type: "success" | "error" | "warning"; message: string } | null>(null);
   const [participantModalOpen, setParticipantModalOpen] = useState(true);
-  const [participantForm, setParticipantForm] = useState({ fullName: "", email: "" });
-  const [participantInfo, setParticipantInfo] = useState({ fullName: "", email: "" });
+  const [participantForm, setParticipantForm] = useState<ParticipantFormState>({
+    fullName: "",
+    email: "",
+    consent: false,
+  });
+  const [participantInfo, setParticipantInfo] = useState<ParticipantInfoState>({
+    fullName: "",
+    email: "",
+    consentGranted: false,
+    consentGrantedAt: null,
+  });
   const [autoResponseIndex, setAutoResponseIndex] = useState(0);
   const emailFeedbackClass = useMemo(() => {
     if (!emailFeedback) return "";
@@ -78,18 +100,31 @@ export function ChatPanel() {
   }, [emailFeedback]);
 
   const participantFormValid =
-    participantForm.fullName.trim().length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participantForm.email.trim());
+    participantForm.fullName.trim().length > 0 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participantForm.email.trim()) &&
+    participantForm.consent;
   const participantInfoReady =
-    participantInfo.fullName.trim().length > 0 && participantInfo.email.trim().length > 0;
+    participantInfo.fullName.trim().length > 0 &&
+    participantInfo.email.trim().length > 0 &&
+    participantInfo.consentGranted;
 
   useEffect(() => {
     if (!participantModalOpen) return;
-    if (participantInfo.fullName.trim() || participantInfo.email.trim()) {
-      setParticipantForm({ fullName: participantInfo.fullName, email: participantInfo.email });
+    if (participantInfo.fullName.trim() || participantInfo.email.trim() || participantInfo.consentGranted) {
+      setParticipantForm({
+        fullName: participantInfo.fullName,
+        email: participantInfo.email,
+        consent: participantInfo.consentGranted,
+      });
     } else {
-      setParticipantForm({ fullName: "", email: "" });
+      setParticipantForm({ fullName: "", email: "", consent: false });
     }
-  }, [participantModalOpen, participantInfo.fullName, participantInfo.email]);
+  }, [
+    participantModalOpen,
+    participantInfo.fullName,
+    participantInfo.email,
+    participantInfo.consentGranted,
+  ]);
 
   const gptConfigured = gpt5StatusQuery.data?.configured ?? false;
   const requireApiKey = gpt5StatusQuery.isSuccess && !gptConfigured;
@@ -175,18 +210,21 @@ export function ChatPanel() {
   };
 
   const handleParticipantInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
+    const { name, value, type, checked } = event.target;
     setParticipantForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   const handleParticipantSubmit = () => {
     if (!participantFormValid) return;
+    const consentTimestamp = new Date().toISOString();
     setParticipantInfo({
       fullName: participantForm.fullName.trim(),
       email: participantForm.email.trim(),
+      consentGranted: true,
+      consentGrantedAt: consentTimestamp,
     });
     setParticipantModalOpen(false);
   };
@@ -201,6 +239,10 @@ export function ChatPanel() {
       duration_minutes: 10,
       user_name: participantInfo.fullName.trim(),
       user_email: participantInfo.email.trim(),
+      consent: {
+        granted: participantInfo.consentGranted,
+        granted_at: participantInfo.consentGrantedAt ?? new Date().toISOString(),
+      },
     });
   };
 
@@ -376,6 +418,10 @@ export function ChatPanel() {
           duration_minutes: 10,
           user_name: participantInfo.fullName.trim(),
           user_email: participantInfo.email.trim(),
+          consent: {
+            granted: participantInfo.consentGranted,
+            granted_at: participantInfo.consentGrantedAt ?? new Date().toISOString(),
+          },
         });
         activeSession = result;
       } catch (error) {
@@ -403,6 +449,17 @@ export function ChatPanel() {
           <div className="w-full max-w-lg rounded-3xl border border-cyan-500/40 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
             <h2 className="text-2xl font-bold">Please enter your information</h2>
             <p className="mt-2 text-sm text-slate-300">Please enter your information.</p>
+            <div className="mt-5 space-y-3 rounded-2xl border border-cyan-500/20 bg-slate-900/60 p-4 text-left">
+              <h3 className="text-base font-semibold text-cyan-200">Aydınlatma Metni</h3>
+              <p className="text-sm text-slate-300">
+                Bu uygulama, yabancı dil yeterliliğinizi değerlendirmek amacıyla sesli ve yazılı yanıtlarınızı işler. Paylaştığınız bilgiler sadece değerlendirme süreci boyunca saklanır, üçüncü kişilerle paylaşılmaz ve dilediğiniz zaman silinebilir.
+              </p>
+              <ul className="list-disc space-y-2 pl-5 text-sm text-slate-300">
+                <li>Kimlik ve iletişim bilgileriniz seans raporlarını oluşturmak ve size geri bildirim iletmek için kullanılır.</li>
+                <li>Yanıtlarınız yapay zekâ modelleri tarafından analiz edilerek ilerlemenize yardımcı olacak puan ve öneriler sunulur.</li>
+                <li>Dilediğiniz zaman desteğe başvurarak verilerinize erişme, düzeltme veya silme hakkınızı kullanabilirsiniz.</li>
+              </ul>
+            </div>
             <div className="mt-6 grid gap-4">
               <div className="grid gap-2">
                 <label className="text-sm font-semibold text-slate-300" htmlFor="participant_full_name">Full Name</label>
@@ -428,6 +485,20 @@ export function ChatPanel() {
                   placeholder="example@domain.com"
                 />
               </div>
+            </div>
+            <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-4">
+              <input
+                id="participant_consent"
+                name="consent"
+                type="checkbox"
+                checked={participantForm.consent}
+                onChange={handleParticipantInputChange}
+                className="mt-1 h-4 w-4 rounded border border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-400"
+                required
+              />
+              <label className="text-sm text-slate-200" htmlFor="participant_consent">
+                Aydınlatma metnini okudum, kişisel verilerimin değerlendirme oturumu kapsamında işlenmesine izin veriyorum.
+              </label>
             </div>
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
@@ -664,7 +735,7 @@ export function ChatPanel() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <button
                 onClick={handleStart}
-                disabled={blockingForConfig || isLoading}
+                disabled={blockingForConfig || isLoading || !participantInfoReady}
                 className="group/btn relative overflow-hidden rounded-xl px-8 py-4 text-lg font-semibold transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-fuchsia-600 transition-transform duration-300 group-hover/btn:scale-110"></div>
@@ -674,7 +745,7 @@ export function ChatPanel() {
               </button>
               <button
                 onClick={handleAutoResponse}
-                disabled={blockingForConfig || isLoading}
+                disabled={blockingForConfig || isLoading || !participantInfoReady}
                 className="group relative overflow-hidden rounded-xl px-6 py-4 text-lg font-semibold transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 transition-transform duration-300 group-hover:scale-110"></div>

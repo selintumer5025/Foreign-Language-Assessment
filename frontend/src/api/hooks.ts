@@ -12,8 +12,8 @@ import type {
   Gpt5Status,
   ReportResponse,
   SessionFinishResponse,
+  SessionStartRequest,
   SessionStartResponse,
-  InteractionMode
 } from "../types";
 
 const SESSION_KEY = ["session"];
@@ -24,7 +24,7 @@ const EMAIL_STATUS_KEY = ["email-status"];
 export function useStartSession() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { mode: InteractionMode; duration_minutes: number; user_name?: string; user_email?: string }) => {
+    mutationFn: async (payload: SessionStartRequest) => {
       const { data } = await api.post<SessionStartResponse>("/api/session/start", payload);
       return data;
     },

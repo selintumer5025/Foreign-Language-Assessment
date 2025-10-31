@@ -3,13 +3,21 @@ from __future__ import annotations
 import uuid
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from ..models import ChatMessage, InteractionMode
 
 
 class SessionData:
-    def __init__(self, mode: InteractionMode, duration_minutes: int, user_name: str | None = None, user_email: str | None = None):
+    def __init__(
+        self,
+        mode: InteractionMode,
+        duration_minutes: int,
+        user_name: str | None = None,
+        user_email: str | None = None,
+        consent_granted: bool = False,
+        consent_granted_at: Optional[datetime] = None,
+    ):
         self.session_id = str(uuid.uuid4())
         self.mode = mode
         self.duration_minutes = duration_minutes
@@ -19,6 +27,8 @@ class SessionData:
         self.messages: List[ChatMessage] = []
         self.standard_id: str | None = None
         self.question_plan: List[str] = []
+        self.consent_granted = consent_granted
+        self.consent_granted_at = consent_granted_at or (datetime.utcnow() if consent_granted else None)
 
     @property
     def duration_seconds(self) -> int:
@@ -37,8 +47,23 @@ class InMemorySessionStore:
         self._sessions: Dict[str, SessionData] = {}
         self._turn_counts: Dict[str, int] = defaultdict(int)
 
-    def create_session(self, mode: InteractionMode, duration_minutes: int, user_name: str | None = None, user_email: str | None = None) -> SessionData:
-        session = SessionData(mode=mode, duration_minutes=duration_minutes, user_name=user_name, user_email=user_email)
+    def create_session(
+        self,
+        mode: InteractionMode,
+        duration_minutes: int,
+        user_name: str | None = None,
+        user_email: str | None = None,
+        consent_granted: bool = False,
+        consent_granted_at: Optional[datetime] = None,
+    ) -> SessionData:
+        session = SessionData(
+            mode=mode,
+            duration_minutes=duration_minutes,
+            user_name=user_name,
+            user_email=user_email,
+            consent_granted=consent_granted,
+            consent_granted_at=consent_granted_at,
+        )
         self._sessions[session.session_id] = session
         return session
 

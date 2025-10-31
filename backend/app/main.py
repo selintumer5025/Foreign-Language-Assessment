@@ -70,11 +70,19 @@ def health_check() -> dict:
 @app.post("/api/session/start", response_model=SessionStartResponse, tags=["session"])
 def start_session(payload: SessionStartRequest, _: str = Depends(get_current_token)) -> SessionStartResponse:
     store = get_store()
+    if not payload.consent.granted:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Participant consent is required to start a session",
+        )
+    consent_timestamp = payload.consent.granted_at or datetime.utcnow()
     session = store.create_session(
         mode=payload.mode,
         duration_minutes=payload.duration_minutes,
         user_name=payload.user_name,
         user_email=payload.user_email,
+        consent_granted=True,
+        consent_granted_at=consent_timestamp,
     )
     greeting = next_prompt([], session=session)
     session.add_message(ChatMessage(role="assistant", content=greeting))
@@ -93,6 +101,11 @@ def chat(payload: ChatRequest, _: str = Depends(get_current_token)) -> ChatRespo
         session = store.get(payload.session_id)
     except KeyError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    if not session.consent_granted:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Participant consent is required for this session",
+        )
 
     user_message = ChatMessage(role="user", content=payload.user_message)
     session.add_message(user_message)
@@ -109,6 +122,11 @@ def finish_session(payload: SessionFinishRequest, _: str = Depends(get_current_t
         session = store.get(payload.session_id)
     except KeyError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    if not session.consent_granted:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Participant consent is required for this session",
+        )
 
     summary = "Conversation completed. Awaiting evaluation."
     response = SessionFinishResponse(
@@ -131,6 +149,11 @@ def evaluate(payload: EvaluationRequest, _: str = Depends(get_current_token)) ->
             session = store.get(payload.session_id)
         except KeyError:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        if not session.consent_granted:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Participant consent is required for this session",
+            )
         transcript = session.messages
         metadata = metadata.model_copy(update={
             "started_at": metadata.started_at or session.started_at,

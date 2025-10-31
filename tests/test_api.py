@@ -11,7 +11,11 @@ def get_auth_headers():
 
 def test_session_lifecycle():
     client = TestClient(app)
-    start_resp = client.post("/api/session/start", json={"mode": "text", "duration_minutes": 5}, headers=get_auth_headers())
+    start_resp = client.post(
+        "/api/session/start",
+        json={"mode": "text", "duration_minutes": 5, "consent": {"granted": True}},
+        headers=get_auth_headers(),
+    )
     assert start_resp.status_code == 200
     start_body = start_resp.json()
     assert start_body["mode"] == "text"
@@ -52,3 +56,14 @@ def test_session_lifecycle():
     )
     assert email_resp.status_code == 503
     assert "Email service is not configured" in email_resp.json()["detail"]
+
+
+def test_session_requires_consent():
+    client = TestClient(app)
+    start_resp = client.post(
+        "/api/session/start",
+        json={"mode": "text", "duration_minutes": 5, "consent": {"granted": False}},
+        headers=get_auth_headers(),
+    )
+    assert start_resp.status_code == 403
+    assert start_resp.json()["detail"] == "Participant consent is required to start a session"
