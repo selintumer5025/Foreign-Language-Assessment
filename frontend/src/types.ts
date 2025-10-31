@@ -119,8 +119,9 @@ export interface EmailRequestPayload {
   to: string;
   subject: string;
   body: string;
-  attachments?: Array<Record<string, unknown>>;
+  attachments?: EmailAttachmentPayload[];
   links?: string[];
+  session_id?: string;
 }
 
 export interface EmailConfigUpdatePayload {
@@ -136,4 +137,23 @@ export interface EmailConfigUpdatePayload {
 export interface EmailResponsePayload {
   status: string;
   message_id: string;
+}
+
+export interface EmailAttachmentPayload {
+  filename: string;
+  content_type: string;
+  data: string;
+}
+
+export interface SessionAudioUploadRequest {
+  session_id: string;
+  audio_base64: string;
+  mime_type?: string;
+  report_date?: string;
+}
+
+export interface SessionAudioUploadResponse {
+  filename: string;
+  stored_path: string;
+  content_type: string;
 }

@@ -5,4 +5,5 @@ __all__ = [
     "emailer",
     "reporting",
     "session_store",
+    "audio",
 ]

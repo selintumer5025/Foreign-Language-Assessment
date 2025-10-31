@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import binascii
 import logging
 import smtplib
 import ssl
@@ -29,6 +31,29 @@ def _build_email_message(payload: EmailRequest, sender: str) -> EmailMessage:
         if links_html:
             html_body += f"<ul>{links_html}</ul>"
         message.add_alternative(html_body, subtype="html")
+
+    if payload.attachments:
+        for attachment in payload.attachments:
+            try:
+                file_bytes = base64.b64decode(attachment.data, validate=True)
+            except (binascii.Error, ValueError) as exc:
+                logger.warning("Failed to decode email attachment %s: %s", attachment.filename, exc)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid attachment provided: {attachment.filename}",
+                ) from exc
+
+            maintype, subtype = "application", "octet-stream"
+            if "/" in attachment.content_type:
+                parts = attachment.content_type.split("/", 1)
+                maintype, subtype = parts[0], parts[1]
+
+            message.add_attachment(
+                file_bytes,
+                maintype=maintype,
+                subtype=subtype,
+                filename=attachment.filename,
+            )
 
     return message
 
