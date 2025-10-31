@@ -18,7 +18,7 @@ REPORTS_DIR = Path("backend/protected_reports")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 _REPORT_INDEX: dict[str, "ReportRecord"] = {}
-_TOKEN_TTL_MINUTES = 15
+_TOKEN_TTL_MINUTES = 60 * 24 * 7
 
 
 def _now() -> datetime:

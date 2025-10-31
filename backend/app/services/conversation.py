@@ -17,6 +17,10 @@ CUSTOM_QUESTION_DIRS = (
     Path(__file__).resolve().parents[3] / "sorular",
     Path(__file__).resolve().parents[3] / "soru",
 )
+CLOSING_MESSAGE = (
+    "TOEFL iBT Speaking konuşma pratiğini tamamladığınız için teşekkürler. "
+    "Oturumu Sonlandır tuşuna basabilir, raporunuzun paylaşılmasını sağlayabilirsiniz."
+)
 FALLBACK_QUESTIONS = [
     "Please introduce yourself in English.",
     "What are your current study or career goals?",
@@ -100,12 +104,7 @@ def _select_questions(question_pool: List[str]) -> List[str]:
 
 
 def _closing_message(standard_id: str, config: dict | None) -> str:
-    label = standard_id.upper()
-    if config:
-        label = config.get("meta", {}).get("label", label)
-    return (
-        f"{label} konuşma pratiğini tamamladığınız için teşekkürler. Oturumu Sonlandır tuşuna basabilir, raporunuzun paylaşılmasını sağlayabilirsiniz."
-    )
+    return CLOSING_MESSAGE
 
 
 def next_prompt(
@@ -134,17 +133,12 @@ def next_prompt(
         config = None
 
     assistant_turns = [m for m in history if m.role == "assistant"]
-    user_turns = [m for m in history if m.role == "user"]
-
     if len(assistant_turns) < QUESTIONS_PER_SESSION:
         return questions[len(assistant_turns)]
 
     # Once the five core questions are complete, provide a closing message.
-    if not assistant_turns or assistant_turns[-1].content != _closing_message(standard, config):
-        return _closing_message(standard, config)
+    closing_message = _closing_message(standard, config)
+    if not assistant_turns or assistant_turns[-1].content != closing_message:
+        return closing_message
 
-    # If the user continues after the closing, gently remind them.
-    if user_turns and len(user_turns) >= QUESTIONS_PER_SESSION:
-        return "Feel free to request your evaluation whenever you're ready."
-
-    return questions[-1]
+    return closing_message

@@ -23,6 +23,7 @@ import type {
   InteractionMode,
   SessionFinishResponse
 } from "../types";
+import { CLOSING_MESSAGE } from "../constants";
 
 type EmailFeedbackState = {
   type: "success" | "error" | "warning" | "info";
@@ -480,8 +481,11 @@ export function ChatPanel() {
     if (lastSpokenIdRef.current === lastMessage.id) return;
 
     lastSpokenIdRef.current = lastMessage.id;
-    const utterance = new SpeechSynthesisUtterance(lastMessage.content);
+    const textToSpeak =
+      lastMessage.content.trim() === CLOSING_MESSAGE ? "Thank you." : lastMessage.content;
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = "en-US";
+    utterance.rate = 0.85;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   }, [session?.mode, transcript]);
@@ -738,7 +742,7 @@ export function ChatPanel() {
         `Yeni oluşturulan dil değerlendirme raporu ${participant.full_name} (${participant.email}) tarafından oluşturulan değerlendirmeye aittir.`,
         "Detaylı rapora aşağıdaki bağlantıdan ulaşabilirsiniz:",
         report.report_url,
-        "Bu bağlantı güvenlik nedeniyle 15 dakika içinde sona erecektir.",
+        "Bu bağlantı güvenlik nedeniyle 7 gün içinde sona erecektir.",
         "",
         "Bu mesaj sistem tarafından otomatik gönderilmiştir.",
       ].join("\n");
@@ -1337,6 +1341,7 @@ export function ChatPanel() {
                   <div className="space-y-4">
                     {transcript.map((message) => {
                       if (message.role === "assistant") {
+                        const isClosingMessage = message.content.trim() === CLOSING_MESSAGE;
                         const isActive = isRecording && activePromptId === message.id;
                         const disabled =
                           !speechSupported ||
@@ -1354,18 +1359,20 @@ export function ChatPanel() {
                                   {new Date(message.timestamp).toLocaleTimeString()}
                                 </p>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleToggleRecordingForMessage(message.id)}
-                                disabled={disabled}
-                                className={`rounded-lg px-4 py-3 text-sm font-semibold text-white shadow transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700 ${
-                                  isActive ? "bg-blue-800 hover:bg-blue-900" : "bg-blue-600 hover:bg-blue-700"
-                                }`}
-                              >
-                                {isActive ? "İngilizce Kaydını Durdur" : "İngilizce Kaydı Başlat"}
-                              </button>
+                              {!isClosingMessage && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleRecordingForMessage(message.id)}
+                                  disabled={disabled}
+                                  className={`rounded-lg px-4 py-3 text-sm font-semibold text-white shadow transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 disabled:cursor-not-allowed disabled:bg-blue-200 disabled:text-blue-700 ${
+                                    isActive ? "bg-blue-800 hover:bg-blue-900" : "bg-blue-600 hover:bg-blue-700"
+                                  }`}
+                                >
+                                  {isActive ? "İngilizce Kaydını Durdur" : "İngilizce Kaydı Başlat"}
+                                </button>
+                              )}
                             </div>
-                            {lastCaptured && (
+                            {lastCaptured && !isClosingMessage && (
                               <div className="max-w-xl rounded-lg border border-blue-200 bg-slate-50 px-4 py-3 text-xs text-slate-700 shadow dark:border-blue-400/60 dark:bg-slate-800/60 dark:text-slate-100">
                                 <p className="font-semibold text-blue-700 dark:text-blue-300">Son kaydedilen yanıt</p>
                                 <p className="mt-1 leading-snug">{lastCaptured}</p>
@@ -1417,7 +1424,7 @@ export function ChatPanel() {
                 </svg>
                 Raporu Görüntüle
               </a>
-              <p className="text-xs text-slate-600 dark:text-slate-400">Bağlantı 15 dakika içinde sona erer.</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">Bağlantı 7 gün içinde sona erer.</p>
             </div>
           )}
           {emailFeedback && (
