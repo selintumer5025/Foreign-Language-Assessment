@@ -58,11 +58,6 @@ function App() {
               alt="Foreign Language Assessment logosu"
               className="h-12 w-auto"
             />
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Yabancı Dil Mülakat Koçu
-              </p>
-            </div>
           </div>
           <button
             type="button"
