@@ -1,0 +1,21 @@
+# Render deployment environment variables
+APP_SECRET_TOKEN=change-me-secret
+APP_BASE_URL=https://your-app.onrender.com
+TARGET_EMAIL=demo@example.com
+REPORT_LANGUAGE=en
+STORE_TRANSCRIPTS=true
+
+# Email provider configuration (SMTP example)
+EMAIL_PROVIDER=smtp
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USERNAME=demo@example.com
+SMTP_PASSWORD=change-me
+EMAIL_DEFAULT_SENDER=coach@example.com
+
+# Optional: SendGrid configuration
+SENDGRID_API_KEY=
+
+# Frontend build variables (must match backend values)
+VITE_API_BASE_URL=https://your-app.onrender.com
+VITE_APP_SECRET_TOKEN=change-me-secret
