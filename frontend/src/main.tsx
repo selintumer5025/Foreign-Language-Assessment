@@ -14,14 +14,13 @@ function App() {
   const getInitialTheme = useMemo<() => Theme>(() => {
     return () => {
       if (typeof window === "undefined") {
-        return "dark";
+        return "light";
       }
       const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
       if (stored === "light" || stored === "dark") {
         return stored;
       }
-      const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false;
-      return prefersDark ? "dark" : "light";
+      return "light";
     };
   }, []);
 
@@ -63,9 +62,6 @@ function App() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Yabancı Dil Mülakat Koçu
               </p>
-              <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                TOEFL tarzı konuşma pratiği için rehberiniz
-              </h1>
             </div>
           </div>
           <button
