@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
-const API_TOKEN = import.meta.env.VITE_APP_SECRET_TOKEN ?? "dev-secret";
+const API_BASE_URL = "https://your-app.onrender.com";
+const API_TOKEN = "change-me-secret";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
