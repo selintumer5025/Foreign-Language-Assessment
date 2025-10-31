@@ -118,6 +118,24 @@ def resolve_report_token(token: str) -> ReportRecord:
     return record
 
 
+def get_latest_report_for_session(session_id: str) -> ReportRecord | None:
+    """Return the newest report created for a given session, if available."""
+
+    if not session_id:
+        return None
+
+    _cleanup_expired_reports()
+    matching_records = [
+        record
+        for record in _REPORT_INDEX.values()
+        if record.session_id == session_id and record.path.exists()
+    ]
+    if not matching_records:
+        return None
+
+    return max(matching_records, key=lambda record: record.created_at)
+
+
 def _parse_iso_datetime(raw: str) -> datetime | None:
     value = raw.strip()
     if not value:

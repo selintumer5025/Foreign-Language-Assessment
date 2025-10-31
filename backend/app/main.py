@@ -9,6 +9,7 @@ from typing import List
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .auth import get_current_token
 from .config import get_settings, set_gpt5_api_key, set_email_settings
@@ -40,7 +41,7 @@ from .services.conversation import next_prompt
 from .services.evaluation import evaluate_transcript
 from .services.gpt5_client import clear_gpt5_client_cache
 from .services.emailer import send_email
-from .services.reporting import persist_report, resolve_report_token
+from .services.reporting import get_latest_report_for_session, persist_report, resolve_report_token
 from .services.audio import store_session_audio
 from .services.session_store import get_store
 
@@ -207,6 +208,12 @@ def download_report(token: str) -> FileResponse:
 def send_report_email(payload: EmailRequest, _: str = Depends(get_current_token)) -> EmailResponse:
     attachments: List[EmailAttachment] = list(payload.attachments or [])
 
+    logger.info(
+        "Preparing report email for %s (session_id=%s)",
+        payload.to,
+        payload.session_id or "n/a",
+    )
+
     if payload.session_id:
         store = get_store()
         try:
@@ -231,7 +238,45 @@ def send_report_email(payload: EmailRequest, _: str = Depends(get_current_token)
                 except OSError as exc:  # pragma: no cover - filesystem error
                     logger.warning("Unable to attach audio recording for session %s: %s", session.session_id, exc)
 
+        report_record = get_latest_report_for_session(payload.session_id)
+        if report_record and report_record.path.exists():
+            already_attached = {attachment.filename for attachment in attachments}
+            if report_record.filename in already_attached:
+                logger.info(
+                    "HTML report %s already attached for session %s",
+                    report_record.filename,
+                    payload.session_id,
+                )
+            else:
+                try:
+                    report_bytes = report_record.path.read_bytes()
+                    encoded_report = base64.b64encode(report_bytes).decode("ascii")
+                    attachments.append(
+                        EmailAttachment(
+                            filename=report_record.filename,
+                            content_type="text/html",
+                            data=encoded_report,
+                        )
+                    )
+                    logger.info(
+                        "Attached HTML report %s for session %s",
+                        report_record.filename,
+                        payload.session_id,
+                    )
+                except OSError as exc:  # pragma: no cover - filesystem error
+                    logger.warning(
+                        "Unable to attach HTML report for session %s: %s",
+                        payload.session_id,
+                        exc,
+                    )
+        else:
+            logger.info(
+                "No persisted report found to attach for session %s",
+                payload.session_id,
+            )
+
     updated_payload = payload.model_copy(update={"attachments": attachments})
+    logger.info("Sending report email with %d attachment(s)", len(attachments))
     return send_email(updated_payload)
 
 
