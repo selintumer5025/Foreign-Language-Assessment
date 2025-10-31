@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { nanoid } from "nanoid";
 import { api } from "./client";
+import { CLOSING_MESSAGE } from "../constants";
 import type {
   ChatMessage,
   ChatResponse,
@@ -58,13 +59,26 @@ export function useChat(sessionId?: string) {
         content: variables.user_message,
         timestamp: new Date().toISOString()
       };
-      const assistantMessage: ChatMessage = {
-        id: nanoid(),
-        role: "assistant",
-        content: data.assistant_message,
-        timestamp: new Date().toISOString()
-      };
-      queryClient.setQueryData(TRANSCRIPT_KEY, [...history, userMessage, assistantMessage]);
+      const trimmedAssistant = data.assistant_message?.trim() ?? "";
+      const updatedHistory: ChatMessage[] = [...history, userMessage];
+
+      if (trimmedAssistant) {
+        const lastAssistant = [...history].reverse().find((message) => message.role === "assistant");
+        const isDuplicateClosing =
+          trimmedAssistant === CLOSING_MESSAGE && lastAssistant?.content.trim() === CLOSING_MESSAGE;
+
+        if (!isDuplicateClosing) {
+          const assistantMessage: ChatMessage = {
+            id: nanoid(),
+            role: "assistant",
+            content: trimmedAssistant,
+            timestamp: new Date().toISOString()
+          };
+          updatedHistory.push(assistantMessage);
+        }
+      }
+
+      queryClient.setQueryData(TRANSCRIPT_KEY, updatedHistory);
     }
   });
 }
