@@ -479,87 +479,89 @@ export function ChatPanel() {
   return (
     <div className="relative min-h-screen">
       {participantModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-cyan-500/40 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
-            <h2 className="text-2xl font-bold">Please enter your information</h2>
-            <p className="mt-2 text-sm text-slate-300">Please enter your information.</p>
-            <div className="mt-5 space-y-3 rounded-2xl border border-cyan-500/20 bg-slate-900/60 p-4 text-left">
-              <h3 className="text-base font-semibold text-cyan-200">Aydınlatma Metni</h3>
-              <p className="text-sm text-slate-300">
-                Bu uygulama, yabancı dil yeterliliğinizi değerlendirmek amacıyla sesli ve yazılı yanıtlarınızı işler. Paylaştığınız bilgiler sadece değerlendirme süreci boyunca saklanır, üçüncü kişilerle paylaşılmaz ve dilediğiniz zaman silinebilir. Dil değerlendirme raporlarınız selintumer@gmail.com adresine iletilir.
-              </p>
-              <ul className="list-disc space-y-2 pl-5 text-sm text-slate-300">
-                <li>Kimlik ve iletişim bilgileriniz seans raporlarını oluşturmak ve size geri bildirim iletmek için kullanılır.</li>
-                <li>Yanıtlarınız yapay zekâ modelleri tarafından analiz edilerek ilerlemenize yardımcı olacak puan ve öneriler sunulur.</li>
-                <li>Dilediğiniz zaman desteğe başvurarak verilerinize erişme, düzeltme veya silme hakkınızı kullanabilirsiniz.</li>
-              </ul>
-            </div>
-            <div className="mt-6 grid gap-4">
-              <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-300" htmlFor="participant_full_name">Full Name</label>
-                <input
-                  id="participant_full_name"
-                  name="fullName"
-                  type="text"
-                  value={participantForm.fullName}
-                  onChange={handleParticipantInputChange}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                  placeholder="John Doe"
-                />
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-950/80 backdrop-blur-sm">
+          <div className="flex min-h-full items-center justify-center px-4 py-10">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-cyan-500/40 bg-slate-900/95 p-8 text-slate-100 shadow-2xl">
+              <h2 className="text-2xl font-bold">Please enter your information</h2>
+              <p className="mt-2 text-sm text-slate-300">Please enter your information.</p>
+              <div className="mt-5 space-y-3 rounded-2xl border border-cyan-500/20 bg-slate-900/60 p-4 text-left">
+                <h3 className="text-base font-semibold text-cyan-200">Aydınlatma Metni</h3>
+                <p className="text-sm text-slate-300">
+                  Bu uygulama, yabancı dil yeterliliğinizi değerlendirmek amacıyla sesli ve yazılı yanıtlarınızı işler. Paylaştığınız bilgiler sadece değerlendirme süreci boyunca saklanır, üçüncü kişilerle paylaşılmaz ve dilediğiniz zaman silinebilir. Dil değerlendirme raporlarınız selintumer@gmail.com adresine iletilir.
+                </p>
+                <ul className="list-disc space-y-2 pl-5 text-sm text-slate-300">
+                  <li>Kimlik ve iletişim bilgileriniz seans raporlarını oluşturmak ve size geri bildirim iletmek için kullanılır.</li>
+                  <li>Yanıtlarınız yapay zekâ modelleri tarafından analiz edilerek ilerlemenize yardımcı olacak puan ve öneriler sunulur.</li>
+                  <li>Dilediğiniz zaman desteğe başvurarak verilerinize erişme, düzeltme veya silme hakkınızı kullanabilirsiniz.</li>
+                </ul>
               </div>
-              <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-300" htmlFor="participant_email">Email Address</label>
-                <input
-                  id="participant_email"
-                  name="email"
-                  type="email"
-                  value={participantForm.email}
-                  onChange={handleParticipantInputChange}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
-                  placeholder="example@domain.com"
-                />
+              <div className="mt-6 grid gap-4">
+                <div className="grid gap-2">
+                  <label className="text-sm font-semibold text-slate-300" htmlFor="participant_full_name">Full Name</label>
+                  <input
+                    id="participant_full_name"
+                    name="fullName"
+                    type="text"
+                    value={participantForm.fullName}
+                    onChange={handleParticipantInputChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label className="text-sm font-semibold text-slate-300" htmlFor="participant_email">Email Address</label>
+                  <input
+                    id="participant_email"
+                    name="email"
+                    type="email"
+                    value={participantForm.email}
+                    onChange={handleParticipantInputChange}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-base text-slate-100 focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                    placeholder="example@domain.com"
+                  />
+                </div>
               </div>
-            </div>
-            <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-4">
-              <input
-                id="participant_consent"
-                name="consent"
-                type="checkbox"
-                checked={participantForm.consent}
-                onChange={handleParticipantInputChange}
-                className="mt-1 h-4 w-4 rounded border border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-400"
-                required
-              />
-              <label className="text-sm text-slate-200" htmlFor="participant_consent">
-                Aydınlatma metnini okudum, kişisel verilerimin değerlendirme oturumu kapsamında işlenmesine izin veriyorum.
-              </label>
-            </div>
-            <div className="mt-4 flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-4">
-              <input
-                id="participant_share_report"
-                name="shareReport"
-                type="checkbox"
-                checked={participantForm.shareReport}
-                onChange={handleParticipantInputChange}
-                className="mt-1 h-4 w-4 rounded border border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-400"
-              />
-              <label className="text-sm text-slate-200" htmlFor="participant_share_report">
-                Dil değerlendirme raporunun, belirtilen e-posta adresine paylaşılmasına onay veriyorum.
-                <span className="block text-xs text-slate-400">
-                  Bu onayı dilediğiniz zaman güncelleyebilirsiniz. Onay vermediğiniz sürece rapor e-posta ile iletilmez.
-                </span>
-              </label>
-            </div>
-            <div className="mt-6 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={handleParticipantSubmit}
-                disabled={!participantFormValid}
-                className="relative overflow-hidden rounded-xl px-6 py-3 font-semibold text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <span className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 transition-transform duration-300"></span>
-                <span className="relative">Save and Continue</span>
-              </button>
+              <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-4">
+                <input
+                  id="participant_consent"
+                  name="consent"
+                  type="checkbox"
+                  checked={participantForm.consent}
+                  onChange={handleParticipantInputChange}
+                  className="mt-1 h-4 w-4 rounded border border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-400"
+                  required
+                />
+                <label className="text-sm text-slate-200" htmlFor="participant_consent">
+                  Aydınlatma metnini okudum, kişisel verilerimin değerlendirme oturumu kapsamında işlenmesine izin veriyorum.
+                </label>
+              </div>
+              <div className="mt-4 flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-4">
+                <input
+                  id="participant_share_report"
+                  name="shareReport"
+                  type="checkbox"
+                  checked={participantForm.shareReport}
+                  onChange={handleParticipantInputChange}
+                  className="mt-1 h-4 w-4 rounded border border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-400"
+                />
+                <label className="text-sm text-slate-200" htmlFor="participant_share_report">
+                  Dil değerlendirme raporunun, belirtilen e-posta adresine paylaşılmasına onay veriyorum.
+                  <span className="block text-xs text-slate-400">
+                    Bu onayı dilediğiniz zaman güncelleyebilirsiniz. Onay vermediğiniz sürece rapor e-posta ile iletilmez.
+                  </span>
+                </label>
+              </div>
+              <div className="mt-6 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={handleParticipantSubmit}
+                  disabled={!participantFormValid}
+                  className="relative overflow-hidden rounded-xl px-6 py-3 font-semibold text-white transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 transition-transform duration-300"></span>
+                  <span className="relative">Save and Continue</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
