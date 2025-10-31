@@ -733,7 +733,7 @@ export function ChatPanel() {
         <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-200/80 backdrop-blur-sm dark:bg-slate-950/80">
           <div className="flex min-h-full items-center justify-center px-4 py-10">
             <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-cyan-400/40 bg-white p-8 text-slate-800 shadow-2xl dark:border-cyan-500/40 dark:bg-slate-900/95 dark:text-slate-100">
-              <h2 className="text-2xl font-bold">Bilgilerinizi paylaşın</h2>
+              <h2 className="text-2xl font-bold">Yapay Zeka Destekli Konuşma Değerlendirmesine Hoş Geldiniz✨</h2>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Görüşmeye başlamadan önce mikrofonunuzun açık olduğundan ve sessiz bir ortamda bulunduğunuzdan emin olun.</p>
               <div className="mt-5 space-y-3 rounded-2xl border border-cyan-300/50 bg-cyan-50/70 p-4 text-left dark:border-cyan-500/20 dark:bg-slate-900/60">
                 <h3 className="text-base font-semibold text-cyan-700 dark:text-cyan-200">Aydınlatma Metni</h3>
