@@ -18,8 +18,8 @@ CUSTOM_QUESTION_DIRS = (
     Path(__file__).resolve().parents[3] / "soru",
 )
 CLOSING_MESSAGE = (
-    "TOEFL iBT Speaking konuşma pratiğini tamamladığınız için teşekkürler. "
-    "Oturumu Sonlandır tuşuna basabilir, raporunuzun paylaşılmasını sağlayabilirsiniz."
+    "Konuşma pratiğini tamamladığınız için teşekkürler. "
+    "Ekranın sol üstünde yer alan \"Oturumu Sonlandır\" tuşuna basabilir ve  raporunuzun paylaşılmasını sağlayabilirsiniz."
 )
 FALLBACK_QUESTIONS = [
     "Please introduce yourself in English.",
