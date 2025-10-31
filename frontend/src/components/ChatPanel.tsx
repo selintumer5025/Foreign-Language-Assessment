@@ -337,6 +337,14 @@ export function ChatPanel() {
   const restartTimeoutRef = useRef<number | null>(null);
   const activePromptIdRef = useRef<string | null>(null);
 
+  const handleSend = useCallback(
+    async (message: string) => {
+      if (!session?.session_id || blockingForConfig) return;
+      await chatMutation.mutateAsync({ session_id: session.session_id, user_message: message });
+    },
+    [session?.session_id, blockingForConfig, chatMutation]
+  );
+
   useEffect(() => {
     activePromptIdRef.current = activePromptId;
   }, [activePromptId]);
@@ -570,14 +578,6 @@ export function ChatPanel() {
       },
     });
   };
-
-  const handleSend = useCallback(
-    async (message: string) => {
-      if (!session?.session_id || blockingForConfig) return;
-      await chatMutation.mutateAsync({ session_id: session.session_id, user_message: message });
-    },
-    [session?.session_id, blockingForConfig, chatMutation]
-  );
 
   const handleToggleRecordingForMessage = useCallback(
     (messageId: string) => {
