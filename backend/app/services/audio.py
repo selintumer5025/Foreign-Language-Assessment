@@ -4,6 +4,7 @@ import base64
 import binascii
 import logging
 import re
+import shutil
 import subprocess
 import tempfile
 from datetime import datetime
@@ -12,7 +13,10 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 
-import imageio_ffmpeg
+try:  # pragma: no cover - optional dependency
+    import imageio_ffmpeg  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover - handled at runtime
+    imageio_ffmpeg = None  # type: ignore[assignment]
 
 from ..models import SessionAudioUploadRequest
 from .session_store import get_store
@@ -72,14 +76,22 @@ def _ensure_mp3(audio_bytes: bytes, mime_type: Optional[str]) -> bytes:
     if mime_type and any(keyword in mime_type.lower() for keyword in ("mpeg", "mp3")):
         return audio_bytes
 
-    try:
-        ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
-    except Exception as exc:  # pragma: no cover - network download/availability
-        logger.error("Failed to obtain ffmpeg executable: %s", exc)
+    ffmpeg_path: Optional[str] = None
+    if imageio_ffmpeg is not None:
+        try:
+            ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+        except Exception as exc:  # pragma: no cover - network download/availability
+            logger.warning("imageio-ffmpeg failed to provide an ffmpeg binary: %s", exc)
+
+    if ffmpeg_path is None:
+        ffmpeg_path = shutil.which("ffmpeg")
+
+    if not ffmpeg_path:
+        logger.error("FFmpeg executable is not available. Install imageio-ffmpeg or add ffmpeg to PATH.")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Audio conversion service is unavailable",
-        ) from exc
+        )
 
     suffix = _extension_from_mime(mime_type)
     with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as src_file:
