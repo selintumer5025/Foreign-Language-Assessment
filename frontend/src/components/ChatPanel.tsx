@@ -27,6 +27,7 @@ type ParticipantFormState = {
   fullName: string;
   email: string;
   consent: boolean;
+  shareReport: boolean;
 };
 
 type ParticipantInfoState = {
@@ -34,6 +35,8 @@ type ParticipantInfoState = {
   email: string;
   consentGranted: boolean;
   consentGrantedAt: string | null;
+  shareReportConsent: boolean;
+  shareReportConsentGrantedAt: string | null;
 };
 const SAMPLE_RESPONSES = [
   "Certainly! One experience that stands out is when our team had to deliver a new feature under a strict deadline. I coordinated the project timeline, clarified ownership, and hosted daily check-ins to surface blockers quickly. As a result, we shipped on time and the customer adoption rate exceeded expectations.",
@@ -78,12 +81,15 @@ export function ChatPanel() {
     fullName: "",
     email: "",
     consent: false,
+    shareReport: false,
   });
   const [participantInfo, setParticipantInfo] = useState<ParticipantInfoState>({
     fullName: "",
     email: "",
     consentGranted: false,
     consentGrantedAt: null,
+    shareReportConsent: false,
+    shareReportConsentGrantedAt: null,
   });
   const [autoResponseIndex, setAutoResponseIndex] = useState(0);
   const emailFeedbackClass = useMemo(() => {
@@ -115,15 +121,17 @@ export function ChatPanel() {
         fullName: participantInfo.fullName,
         email: participantInfo.email,
         consent: participantInfo.consentGranted,
+        shareReport: participantInfo.shareReportConsent,
       });
     } else {
-      setParticipantForm({ fullName: "", email: "", consent: false });
+      setParticipantForm({ fullName: "", email: "", consent: false, shareReport: false });
     }
   }, [
     participantModalOpen,
     participantInfo.fullName,
     participantInfo.email,
     participantInfo.consentGranted,
+    participantInfo.shareReportConsent,
   ]);
 
   const gptConfigured = gpt5StatusQuery.data?.configured ?? false;
@@ -220,11 +228,16 @@ export function ChatPanel() {
   const handleParticipantSubmit = () => {
     if (!participantFormValid) return;
     const consentTimestamp = new Date().toISOString();
+    const shareConsentTimestamp = participantForm.shareReport
+      ? participantInfo.shareReportConsentGrantedAt ?? new Date().toISOString()
+      : null;
     setParticipantInfo({
       fullName: participantForm.fullName.trim(),
       email: participantForm.email.trim(),
       consentGranted: true,
       consentGrantedAt: consentTimestamp,
+      shareReportConsent: participantForm.shareReport,
+      shareReportConsentGrantedAt: shareConsentTimestamp,
     });
     setParticipantModalOpen(false);
   };
@@ -270,6 +283,8 @@ export function ChatPanel() {
     const participant = {
       full_name: participantInfo.fullName.trim(),
       email: participantInfo.email.trim(),
+      share_report_consent: participantInfo.shareReportConsent,
+      share_report_consent_granted_at: participantInfo.shareReportConsentGrantedAt,
     };
     const metadata = {
       session_id: evaluation.session.id,
@@ -284,7 +299,25 @@ export function ChatPanel() {
     setReportUrl(report.report_url);
     setEmailFeedback(null);
 
-    const recipientEmail = "selintumer@gmail.com";
+    if (!participantInfo.shareReportConsent) {
+      setEmailFeedback({
+        type: "warning",
+        message: "Katılımcı raporun e-posta ile paylaşılmasına izin vermediği için e-posta gönderilmedi.",
+      });
+      return;
+    }
+
+    const configuredRecipient = emailStatusQuery.data?.target_email?.trim();
+    const fallbackRecipient = participantInfo.email.trim();
+    const recipientEmail = configuredRecipient || fallbackRecipient;
+
+    if (!recipientEmail) {
+      setEmailFeedback({
+        type: "error",
+        message: "Geçerli bir alıcı e-posta adresi bulunamadı.",
+      });
+      return;
+    }
 
     if (!emailStatusQuery.data?.configured) {
       setEmailFeedback({
@@ -500,6 +533,22 @@ export function ChatPanel() {
                 Aydınlatma metnini okudum, kişisel verilerimin değerlendirme oturumu kapsamında işlenmesine izin veriyorum.
               </label>
             </div>
+            <div className="mt-4 flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-900/80 p-4">
+              <input
+                id="participant_share_report"
+                name="shareReport"
+                type="checkbox"
+                checked={participantForm.shareReport}
+                onChange={handleParticipantInputChange}
+                className="mt-1 h-4 w-4 rounded border border-slate-600 bg-slate-800 text-cyan-500 focus:ring-cyan-400"
+              />
+              <label className="text-sm text-slate-200" htmlFor="participant_share_report">
+                Dil değerlendirme raporunun, belirttiğim e-posta adresine paylaşılmasına onay veriyorum.
+                <span className="block text-xs text-slate-400">
+                  Bu onayı dilediğiniz zaman güncelleyebilirsiniz. Onay vermediğiniz sürece rapor e-posta ile iletilmez.
+                </span>
+              </label>
+            </div>
             <div className="mt-6 flex items-center justify-end gap-3">
               <button
                 type="button"
@@ -708,6 +757,9 @@ export function ChatPanel() {
               <p className="text-xs uppercase tracking-wide text-cyan-200/80">Assessed Participant</p>
               <p className="text-lg font-semibold text-white">{participantInfo.fullName || "Awaiting information"}</p>
               <p className="text-xs text-cyan-200/70">{participantInfo.email || "Email not provided yet"}</p>
+              <p className="text-xs text-cyan-200/70">
+                Report sharing consent: {participantInfo.shareReportConsent ? "Granted" : "Not granted"}
+              </p>
             </div>
             <button
               type="button"
