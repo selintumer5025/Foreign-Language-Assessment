@@ -76,7 +76,7 @@ def start_session(payload: SessionStartRequest, _: str = Depends(get_current_tok
         user_name=payload.user_name,
         user_email=payload.user_email,
     )
-    greeting = next_prompt([])
+    greeting = next_prompt([], session=session)
     session.add_message(ChatMessage(role="assistant", content=greeting))
     return SessionStartResponse(
         session_id=session.session_id,
@@ -96,7 +96,7 @@ def chat(payload: ChatRequest, _: str = Depends(get_current_token)) -> ChatRespo
 
     user_message = ChatMessage(role="user", content=payload.user_message)
     session.add_message(user_message)
-    assistant_reply = next_prompt(session.messages)
+    assistant_reply = next_prompt(session.messages, session=session)
     session.add_message(ChatMessage(role="assistant", content=assistant_reply))
     turn_count = store.increment_turn(session.session_id)
     return ChatResponse(assistant_message=assistant_reply, turns_completed=turn_count, mode=session.mode)

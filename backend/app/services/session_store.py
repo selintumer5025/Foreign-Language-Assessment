@@ -17,6 +17,8 @@ class SessionData:
         self.user_email = user_email
         self.started_at = datetime.utcnow()
         self.messages: List[ChatMessage] = []
+        self.standard_id: str | None = None
+        self.question_plan: List[str] = []
 
     @property
     def duration_seconds(self) -> int:
