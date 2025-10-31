@@ -13,7 +13,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       <div
         className={clsx(
           "max-w-xl rounded-2xl px-4 py-2 shadow",
-          isUser ? "bg-blue-600 text-white" : "bg-white text-slate-900"
+          isUser
+            ? "bg-blue-600 text-white"
+            : "bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100"
         )}
       >
         <p className="text-sm whitespace-pre-line">{message.content}</p>

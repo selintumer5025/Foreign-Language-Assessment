@@ -144,18 +144,18 @@ export function ChatInput({ disabled, onSend, mode }: ChatInputProps) {
             isRecording ? "bg-blue-800 hover:bg-blue-900" : "bg-blue-600 hover:bg-blue-700"
           }`}
         >
-          {isRecording ? "Stop English Capture" : "Start English Capture"}
+          {isRecording ? "İngilizce Kaydını Durdur" : "İngilizce Kaydı Başlat"}
         </button>
       </div>
       {!speechSupported && (
-        <p className="mt-2 text-xs text-blue-600">
-          Voice capture is not supported in this browser. Switch to a supported browser to keep practicing in English.
+        <p className="mt-2 text-xs text-blue-700 dark:text-blue-300">
+          Bu tarayıcıda ses yakalama desteklenmiyor. İngilizce pratiğe devam etmek için desteklenen bir tarayıcıya geçebilirsiniz.
         </p>
       )}
       {lastCaptured && (
-        <div className="rounded-lg border border-blue-200 bg-white/60 p-3 text-xs text-slate-700 shadow">
-          <p className="font-semibold text-blue-700">Last captured answer</p>
-          <p className="mt-1 leading-snug text-slate-800">{lastCaptured}</p>
+        <div className="rounded-lg border border-blue-200 bg-slate-50 p-3 text-xs text-slate-700 shadow dark:border-blue-400/60 dark:bg-slate-800/60 dark:text-slate-200">
+          <p className="font-semibold text-blue-700 dark:text-blue-300">Son kaydedilen yanıt</p>
+          <p className="mt-1 leading-snug text-slate-800 dark:text-slate-100">{lastCaptured}</p>
         </div>
       )}
     </div>
