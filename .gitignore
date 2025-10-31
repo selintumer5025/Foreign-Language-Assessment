@@ -14,3 +14,4 @@ frontend/.env
 
 # Reports
 backend/generated_reports/
+backend/protected_reports/

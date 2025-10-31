@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+import base64
+import hashlib
+import hmac
+import json
+import secrets
 from html import escape
 from pathlib import Path
 from typing import Optional
@@ -8,8 +14,108 @@ from typing import Optional
 from ..config import get_settings
 from ..models import DualEvaluationResponse, StandardEvaluation
 
-REPORTS_DIR = Path("backend/generated_reports")
+REPORTS_DIR = Path("backend/protected_reports")
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+_REPORT_INDEX: dict[str, "ReportRecord"] = {}
+_TOKEN_TTL_MINUTES = 15
+
+
+def _now() -> datetime:
+    return datetime.utcnow()
+
+
+def _urlsafe_b64encode(raw: bytes) -> str:
+    return base64.urlsafe_b64encode(raw).decode("utf-8").rstrip("=")
+
+
+def _urlsafe_b64decode(raw: str) -> bytes:
+    padding = "=" * (-len(raw) % 4)
+    return base64.urlsafe_b64decode(raw + padding)
+
+
+@dataclass
+class ReportRecord:
+    path: Path
+    filename: str
+    created_at: datetime
+    expires_at: datetime
+    session_id: str
+
+
+def _register_report(record: ReportRecord, report_id: str) -> None:
+    _REPORT_INDEX[report_id] = record
+
+
+def _cleanup_expired_reports(reference: datetime | None = None) -> None:
+    now = reference or _now()
+    expired_keys = [key for key, record in _REPORT_INDEX.items() if record.expires_at < now]
+    for key in expired_keys:
+        record = _REPORT_INDEX.pop(key)
+        if record.path.exists():
+            try:
+                record.path.unlink()
+            except OSError:
+                pass
+
+
+def _build_signed_token(report_id: str, expires_at: datetime) -> str:
+    settings = get_settings()
+    payload = {"rid": report_id, "exp": int(expires_at.timestamp())}
+    serialized = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    signature = hmac.new(settings.secret_token.encode("utf-8"), serialized, hashlib.sha256).digest()
+    return f"{_urlsafe_b64encode(serialized)}.{_urlsafe_b64encode(signature)}"
+
+
+def _parse_signed_token(token: str) -> tuple[str, datetime]:
+    try:
+        payload_b64, signature_b64 = token.split(".", 1)
+    except ValueError as exc:
+        raise ValueError("Invalid token format") from exc
+
+    payload_bytes = _urlsafe_b64decode(payload_b64)
+    provided_signature = _urlsafe_b64decode(signature_b64)
+
+    settings = get_settings()
+    expected_signature = hmac.new(
+        settings.secret_token.encode("utf-8"), payload_bytes, hashlib.sha256
+    ).digest()
+
+    if not hmac.compare_digest(provided_signature, expected_signature):
+        raise ValueError("Invalid token signature")
+
+    payload = json.loads(payload_bytes)
+    report_id = payload.get("rid")
+    expires_ts = payload.get("exp")
+    if not isinstance(report_id, str) or not isinstance(expires_ts, (int, float)):
+        raise ValueError("Malformed token payload")
+
+    expires_at = datetime.utcfromtimestamp(float(expires_ts))
+    return report_id, expires_at
+
+
+def resolve_report_token(token: str) -> ReportRecord:
+    _cleanup_expired_reports()
+    report_id, expires_at = _parse_signed_token(token)
+
+    record = _REPORT_INDEX.get(report_id)
+    if not record:
+        raise ValueError("Report not found")
+
+    if expires_at < _now() or record.expires_at < _now():
+        # Token expired; clean up and deny access.
+        try:
+            del _REPORT_INDEX[report_id]
+        except KeyError:
+            pass
+        if record.path.exists():
+            try:
+                record.path.unlink()
+            except OSError:
+                pass
+        raise ValueError("Report link expired")
+
+    return record
 
 
 def _parse_iso_datetime(raw: str) -> datetime | None:
@@ -242,9 +348,29 @@ def build_html_report(evaluation: DualEvaluationResponse, session_metadata: Opti
 
 def persist_report(evaluation: DualEvaluationResponse, session_metadata: Optional[dict] = None) -> tuple[str, str]:
     report_html = build_html_report(evaluation, session_metadata=session_metadata)
-    filename = f"report_{evaluation.session.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.html"
-    filepath = REPORTS_DIR / filename
+    report_id = secrets.token_urlsafe(16)
+    storage_filename = f"{report_id}.html"
+    filepath = REPORTS_DIR / storage_filename
     filepath.write_text(report_html, encoding="utf-8")
+
+    now = _now()
+    expires_at = now + timedelta(minutes=_TOKEN_TTL_MINUTES)
+    download_filename = (
+        f"assessment_report_{evaluation.session.id}.html"
+        if getattr(evaluation, "session", None) and getattr(evaluation.session, "id", None)
+        else f"assessment_report_{now.strftime('%Y%m%d%H%M%S')}.html"
+    )
+
+    record = ReportRecord(
+        path=filepath,
+        filename=download_filename,
+        created_at=now,
+        expires_at=expires_at,
+        session_id=str(getattr(getattr(evaluation, "session", None), "id", "")),
+    )
+    _register_report(record, report_id)
+
+    token = _build_signed_token(report_id, expires_at)
     base_url = get_settings().app_base_url.rstrip("/")
-    report_url = f"{base_url}/reports/{filename}"
+    report_url = f"{base_url}/api/reports/{token}"
     return report_html, report_url

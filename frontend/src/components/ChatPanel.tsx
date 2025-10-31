@@ -334,6 +334,7 @@ export function ChatPanel() {
       `Yeni oluşturulan dil değerlendirme raporu ${participant.full_name} (${participant.email}) tarafından oluşturulan değerlendirmeye aittir.`,
       "Detaylı rapora aşağıdaki bağlantıdan ulaşabilirsiniz:",
       report.report_url,
+      "Bu bağlantı güvenlik nedeniyle 15 dakika içinde sona erecektir.",
       "",
       "Bu mesaj sistem tarafından otomatik gönderilmiştir.",
     ].join("\n");
@@ -920,17 +921,20 @@ export function ChatPanel() {
 
           {/* Report Link */}
           {reportUrl && (
-            <a
-              href={reportUrl}
-              className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-violet-500/50"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              View Generated Report
-            </a>
+            <div className="flex flex-col gap-2">
+              <a
+                href={reportUrl}
+                className="group inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-violet-500/50"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                View Generated Report
+              </a>
+              <p className="text-xs text-slate-400">Bağlantı 15 dakika içinde sona erer.</p>
+            </div>
           )}
           {emailFeedback && (
             <div className={`rounded-2xl border px-4 py-3 text-sm shadow-lg ${emailFeedbackClass}`}>
