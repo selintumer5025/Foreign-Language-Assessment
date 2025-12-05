@@ -169,20 +169,47 @@ def _send_via_sendgrid(
         message.add_attachment(sg_attachment)
 
     try:
+        print(f"\n{'='*80}")
+        print(f"[SENDGRID] Attempting to send email via SendGrid...")
+        print(f"[SENDGRID] From: {settings.email.default_sender}")
+        print(f"[SENDGRID] To: {payload.to}")
+        print(f"[SENDGRID] Subject: {payload.subject}")
+        print(f"[SENDGRID] Attachments: {len(attachments)}")
+        print(f"[SENDGRID] API Key length: {len(settings.email.sendgrid_api_key)}")
+        print(f"{'='*80}\n")
+        
         sg = SendGridAPIClient(settings.email.sendgrid_api_key)
+        print(f"[SENDGRID] SendGrid client created successfully")
+        
         response = sg.send(message)
+        print(f"\n[SENDGRID] Response received from SendGrid:")
+        print(f"[SENDGRID]   Status Code: {response.status_code}")
+        print(f"[SENDGRID]   Headers: {dict(response.headers)}")
+        print(f"[SENDGRID]   Body: {response.body}")
+        
         message_id = (
             response.headers.get("X-Message-Id")
             or response.headers.get("X-Message-ID")
             or make_msgid(domain="sendgrid.net")
         )
-        print(f"[EMAILER] ✅ Email sent successfully via SendGrid (message_id={message_id})")
-        logger.info("Email sent successfully via SendGrid with message_id %s", message_id)
+        print(f"\n[SENDGRID] ✅ EMAIL SENT SUCCESSFULLY!")
+        print(f"[SENDGRID] Message ID: {message_id}")
+        print(f"[SENDGRID] Status: {response.status_code}")
+        print(f"{'='*80}\n")
+        
+        logger.info("Email sent successfully via SendGrid with message_id %s (status: %d)", message_id, response.status_code)
         return EmailResponse(status="sent", message_id=message_id)
     except Exception as exc:  # pragma: no cover - network interaction
-        print(f"[EMAILER] ❌ FAILED to send email via SendGrid!")
-        print(f"[EMAILER] Error type: {type(exc).__name__}")
-        print(f"[EMAILER] Error message: {str(exc)}")
+        print(f"\n{'='*80}")
+        print(f"[SENDGRID] ❌ FAILED TO SEND EMAIL VIA SENDGRID!")
+        print(f"[SENDGRID] Error type: {type(exc).__name__}")
+        print(f"[SENDGRID] Error message: {str(exc)}")
+        print(f"[SENDGRID] Full error details: {repr(exc)}")
+        if hasattr(exc, 'body'):
+            print(f"[SENDGRID] Error body: {exc.body}")
+        if hasattr(exc, 'status_code'):
+            print(f"[SENDGRID] Status code: {exc.status_code}")
+        print(f"{'='*80}\n")
 
         # Provide more specific error messages for common issues
         error_detail = str(exc)

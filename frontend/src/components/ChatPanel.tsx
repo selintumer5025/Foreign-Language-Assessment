@@ -1320,8 +1320,27 @@ export function ChatPanel() {
               )}
               {sendEmail.isPending && (
                 <p className="w-full rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-700 shadow-lg dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100">
-                  Mail gönderiliyor...
+                  ⏳ Mail gönderiliyor... Lütfen tarayıcıyı kapatmayın.
                 </p>
+              )}
+              {emailFeedback && (
+                <div 
+                  className={`w-full rounded-xl border px-4 py-3 text-xs font-medium shadow-lg ${
+                    emailFeedback.type === "success"
+                      ? "border-green-300 bg-green-50 text-green-700 dark:border-green-500/40 dark:bg-green-500/10 dark:text-green-100"
+                      : emailFeedback.type === "error"
+                      ? "border-red-300 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100"
+                      : emailFeedback.type === "warning"
+                      ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100"
+                      : "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-100"
+                  }`}
+                >
+                  {emailFeedback.type === "success" && "✅ "}
+                  {emailFeedback.type === "error" && "❌ "}
+                  {emailFeedback.type === "warning" && "⚠️ "}
+                  {emailFeedback.type === "info" && "ℹ️ "}
+                  {emailFeedback.message}
+                </div>
               )}
             </div>
           </div>
