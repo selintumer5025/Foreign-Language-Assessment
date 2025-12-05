@@ -1358,10 +1358,14 @@ export function ChatPanel() {
                           <div key={message.id} className="space-y-2">
                             <div className="flex flex-wrap items-start justify-start gap-3">
                               <div className="max-w-xl rounded-2xl bg-white px-4 py-2 text-slate-900 shadow dark:bg-slate-800 dark:text-slate-100">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-2xl">🎧</span>
-                                  <span className="text-sm text-slate-500 italic">Soruyu dinleyiniz...</span>
-                                </div>
+                                {isClosingMessage ? (
+                                  <p className="text-sm whitespace-pre-line">{message.content}</p>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-2xl">🎧</span>
+                                    <span className="text-sm text-slate-500 italic">Soruyu dinleyiniz...</span>
+                                  </div>
+                                )}
                                 <p className="mt-1 text-[11px] uppercase tracking-wide opacity-70">
                                   {new Date(message.timestamp).toLocaleTimeString()}
                                 </p>
