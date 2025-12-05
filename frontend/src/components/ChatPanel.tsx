@@ -919,12 +919,12 @@ export function ChatPanel() {
               <div className="mt-5 space-y-3 rounded-2xl border border-cyan-300/50 bg-cyan-50/70 p-4 text-left dark:border-cyan-500/20 dark:bg-slate-900/60">
                 <h3 className="text-base font-semibold text-cyan-700 dark:text-cyan-200">Aydınlatma Metni</h3>
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                  Bu uygulama, yabancı dil yeterliliğinizi değerlendirmek amacıyla sesli yanıtlarınızı işler. Paylaştığınız bilgiler sadece değerlendirme süreci boyunca saklanır, üçüncü kişilerle paylaşılmaz ve dilediğiniz zaman silinebilir. Dil değerlendirme raporlarınız belirlenen e-posta adresine iletilir.
+                  Bu uygulama, yabancı dil yeterliliğinizi değerlendirmek amacıyla sesli yanıtlarınızı işler. Paylaştığınız bilgiler sadece değerlendirme süreci boyunca işlenir, üçüncü kişilerle paylaşılmaz ve oturum sonunda sunucudan silinir. Dil değerlendirme raporlarınız belirlenen e-posta adresine iletilir.
                 </p>
                 <ul className="list-disc space-y-2 pl-5 text-sm text-slate-600 dark:text-slate-300">
                   <li>Kimlik ve iletişim bilgileriniz seans raporlarını oluşturmak ve size geri bildirim iletmek için kullanılır.</li>
                   <li>Yanıtlarınız yapay zekâ modelleri tarafından analiz edilerek ilerlemenize yardımcı olacak puan ve öneriler sunulur.</li>
-                  <li>Dilediğiniz zaman desteğe başvurarak verilerinize erişme, düzeltme veya silme hakkınızı kullanabilirsiniz.</li>
+                  <li>Verileriniz kalıcı olarak saklanmaz; rapor e-posta ile gönderildikten sonra sistem üzerinden kaldırılır.</li>
                 </ul>
                 <div className="mt-4 space-y-3 rounded-2xl border border-amber-300/50 bg-amber-50/70 p-4 dark:border-amber-500/20 dark:bg-slate-900/60">
                   <h4 className="text-base font-semibold text-amber-700 dark:text-amber-200">⚠️ Önemli Uyarı</h4>
