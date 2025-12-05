@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -229,15 +229,39 @@ def download_report(token: str) -> FileResponse:
     return FileResponse(path=record.path, media_type="text/html", filename=record.filename)
 
 
+def _send_email_background(payload: EmailRequest, attachments: List[EmailAttachment]):
+    """Background task to send email - continues even if client disconnects"""
+    try:
+        updated_payload = payload.model_copy(update={"attachments": attachments})
+        print(f"\n[BACKGROUND EMAIL] Starting background email send...")
+        print(f"[BACKGROUND EMAIL] Total attachments: {len(attachments)}")
+        for idx, att in enumerate(attachments):
+            print(f"[BACKGROUND EMAIL]   Attachment {idx+1}: {att.filename} ({att.content_type})")
+        print(f"[BACKGROUND EMAIL] Sending to: {payload.to}")
+        print(f"[BACKGROUND EMAIL] Subject: {payload.subject}")
+        
+        result = send_email(updated_payload)
+        print(f"[BACKGROUND EMAIL] ✅ Email sent successfully! Message ID: {result.message_id}")
+        logger.info("Background email sent successfully to %s (message_id=%s)", payload.to, result.message_id)
+    except Exception as exc:
+        print(f"[BACKGROUND EMAIL] ❌ Failed to send email: {exc}")
+        logger.exception("Background email failed")
+
+
 @app.post("/api/email", response_model=EmailResponse, tags=["email"])
-def send_report_email(payload: EmailRequest, _: str = Depends(get_current_token)) -> EmailResponse:
+def send_report_email(
+    payload: EmailRequest,
+    background_tasks: BackgroundTasks,
+    _: str = Depends(get_current_token)
+) -> EmailResponse:
     attachments: List[EmailAttachment] = list(payload.attachments or [])
 
     print(f"\n{'='*80}")
-    print(f"[EMAIL ENDPOINT] Preparing report email for {payload.to} (session_id={payload.session_id or 'n/a'})")
+    print(f"[EMAIL ENDPOINT] Queueing report email for {payload.to} (session_id={payload.session_id or 'n/a'})")
+    print(f"[EMAIL ENDPOINT] Email will be sent in background - safe to close browser")
     print(f"{'='*80}")
     logger.info(
-        "Preparing report email for %s (session_id=%s)",
+        "Queueing report email for %s (session_id=%s)",
         payload.to,
         payload.session_id or "n/a",
     )
@@ -340,15 +364,20 @@ def send_report_email(payload: EmailRequest, _: str = Depends(get_current_token)
                 payload.session_id,
             )
 
-    updated_payload = payload.model_copy(update={"attachments": attachments})
-    print(f"\n[EMAIL SEND] Total attachments to send: {len(attachments)}")
-    for idx, att in enumerate(attachments):
-        print(f"[EMAIL SEND]   Attachment {idx+1}: {att.filename} ({att.content_type}, {len(att.data)} chars base64)")
-    print(f"[EMAIL SEND] Sending email to: {payload.to}")
-    print(f"[EMAIL SEND] Subject: {payload.subject}")
+    # Queue email sending as background task
+    background_tasks.add_task(_send_email_background, payload, attachments)
+    
+    print(f"\n[EMAIL ENDPOINT] ✅ Email queued for background delivery")
+    print(f"[EMAIL ENDPOINT] Total attachments: {len(attachments)}")
+    print(f"[EMAIL ENDPOINT] Browser can be closed safely now")
     print(f"{'='*80}\n")
-    logger.info("Sending report email with %d attachment(s)", len(attachments))
-    return send_email(updated_payload)
+    logger.info("Email queued for background delivery with %d attachment(s)", len(attachments))
+    
+    # Return immediately - email will be sent in background
+    return EmailResponse(
+        status="queued",
+        message_id="background-task-queued"
+    )
 
 
 @app.get("/api/config/email", response_model=EmailConfigStatus, tags=["config"])

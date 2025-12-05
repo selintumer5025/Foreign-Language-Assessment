@@ -737,7 +737,7 @@ export function ChatPanel() {
 
       setEmailFeedback({
         type: "info",
-        message: "Rapor başarıyla oluşturuldu. Mail gönderiliyor...",
+        message: "Rapor oluşturuldu. Mail arka planda gönderilecek...",
       });
 
       const subject = `${participant.full_name}- Assessment`;
@@ -754,10 +754,10 @@ export function ChatPanel() {
           body,
           session_id: sessionId,
         });
-        console.log("[Email] Email sent successfully to:", recipientEmail);
+        console.log("[Email] Email queued successfully for:", recipientEmail);
         setEmailFeedback({
           type: "success",
-          message: `Mail ${recipientEmail} adresine başarıyla gönderildi.`,
+          message: `Mail ${recipientEmail} adresine gönderilmek üzere kuyruğa alındı. Tarayıcıyı kapatabilirsiniz.`,
         });
       } catch (error) {
         console.error("[Email] Failed to send report email", error);
@@ -1320,7 +1320,7 @@ export function ChatPanel() {
               )}
               {sendEmail.isPending && (
                 <p className="w-full rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-xs font-medium text-emerald-700 shadow-lg dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100">
-                  ⏳ Mail gönderiliyor... Lütfen tarayıcıyı kapatmayın.
+                  📧 Mail kuyruğa alınıyor...
                 </p>
               )}
               {emailFeedback && (
