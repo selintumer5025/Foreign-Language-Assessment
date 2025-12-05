@@ -91,11 +91,25 @@ def start_session(payload: SessionStartRequest, _: str = Depends(get_current_tok
     )
     greeting = next_prompt([], session=session)
     session.add_message(ChatMessage(role="assistant", content=greeting))
+    
+    # Get the question plan for the session
+    from .services.conversation import _load_question_pool, _select_questions, DEFAULT_STANDARD
+    question_pool = _load_question_pool(session.standard_id or DEFAULT_STANDARD)
+    questions = _select_questions(question_pool) if not session.question_plan else session.question_plan
+    
+    print(f"\n{'='*80}")
+    print(f"[SESSION START] Session ID: {session.session_id}")
+    print(f"[SESSION START] Questions loaded: {len(questions)}")
+    for i, q in enumerate(questions, 1):
+        print(f"  {i}. {q[:60]}...")
+    print(f"{'='*80}\n")
+    
     return SessionStartResponse(
         session_id=session.session_id,
         started_at=session.started_at,
         assistant_greeting=greeting,
         mode=session.mode,
+        questions=questions,
     )
 
 

@@ -18,6 +18,7 @@ export interface SessionStartResponse {
   started_at: string;
   assistant_greeting: string;
   mode: InteractionMode;
+  questions: string[];
 }
 
 export interface ChatResponse {

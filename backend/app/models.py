@@ -38,6 +38,7 @@ class SessionStartResponse(BaseModel):
     started_at: datetime
     assistant_greeting: str
     mode: InteractionMode
+    questions: List[str] = Field(default_factory=list, description="List of interview questions")
 
 
 class ChatRequest(BaseModel):

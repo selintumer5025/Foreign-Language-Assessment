@@ -88,7 +88,7 @@ export function ChatPanel() {
     fullName: "",
     email: "",
     consent: false,
-    shareReport: false,
+    shareReport: true,
   });
   const [participantInfo, setParticipantInfo] = useState<ParticipantInfoState>({
     fullName: "",
@@ -926,6 +926,12 @@ export function ChatPanel() {
                   <li>Yanıtlarınız yapay zekâ modelleri tarafından analiz edilerek ilerlemenize yardımcı olacak puan ve öneriler sunulur.</li>
                   <li>Dilediğiniz zaman desteğe başvurarak verilerinize erişme, düzeltme veya silme hakkınızı kullanabilirsiniz.</li>
                 </ul>
+                <div className="mt-4 space-y-3 rounded-2xl border border-amber-300/50 bg-amber-50/70 p-4 dark:border-amber-500/20 dark:bg-slate-900/60">
+                  <h4 className="text-base font-semibold text-amber-700 dark:text-amber-200">⚠️ Önemli Uyarı</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    Bu platform üzerinden gerçekleştirilen değerlendirme, resmi bir dil yeterlilik testi niteliği taşımamaktadır. Sonuçlar yalnızca kişisel farkındalık ve gelişim amacıyla kullanılmalıdır; resmi işlemlerde veya kurumsal başvurularda geçerli belge olarak kabul edilmez.
+                  </p>
+                </div>
               </div>
               <div className="mt-6 grid gap-4">
                 <div className="grid gap-2">
@@ -964,7 +970,7 @@ export function ChatPanel() {
                   required
                 />
                 <label className="text-sm text-slate-700 dark:text-slate-200" htmlFor="participant_consent">
-                  Aydınlatma metnini okudum, kişisel verilerimin değerlendirme oturumu kapsamında işlenmesine izin veriyorum.
+                  Aydınlatma metnini okudum ve bu değerlendirmenin resmi bir dil yeterlilik testi olmadığını, sonuçların yalnızca kişisel gelişim amacıyla kullanılabileceğini anlamıştır. Kişisel verilerimin değerlendirme oturumu kapsamında işlenmesine izin veriyorum.
                 </label>
               </div>
               <div className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/80">
@@ -1343,7 +1349,6 @@ export function ChatPanel() {
                         const isClosingMessage = isClosingMessageContent(message.content);
                         const isActive = isRecording && activePromptId === message.id;
                         const disabled =
-                          !speechSupported ||
                           !canChat ||
                           isLoading ||
                           (isRecording && activePromptId !== message.id);
@@ -1353,7 +1358,10 @@ export function ChatPanel() {
                           <div key={message.id} className="space-y-2">
                             <div className="flex flex-wrap items-start justify-start gap-3">
                               <div className="max-w-xl rounded-2xl bg-white px-4 py-2 text-slate-900 shadow dark:bg-slate-800 dark:text-slate-100">
-                                <p className="text-sm whitespace-pre-line">{message.content}</p>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-2xl">🎧</span>
+                                  <span className="text-sm text-slate-500 italic">Soruyu dinleyiniz...</span>
+                                </div>
                                 <p className="mt-1 text-[11px] uppercase tracking-wide opacity-70">
                                   {new Date(message.timestamp).toLocaleTimeString()}
                                 </p>
@@ -1463,3 +1471,6 @@ export function ChatPanel() {
     </div>
   );
 }
+
+
+
